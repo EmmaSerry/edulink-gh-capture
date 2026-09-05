@@ -38,3 +38,96 @@ body {
   box-shadow: var(--actrs-shadow);
   background: var(--actrs-surface);
 }
+
+/* Bootstrap's precompiled CSS bakes literal colours into .btn-primary /
+   .text-primary / .bg-primary rather than reading the --bs-primary
+   variable set above (that indirection only exists if you recompile
+   Bootstrap's own Sass) - so without these, every "primary" element
+   quietly stays Bootstrap's default blue instead of the app's navy,
+   which is a big part of why the app read as generic/unbranded. */
+.btn-primary {
+  --bs-btn-bg: var(--actrs-navy);
+  --bs-btn-border-color: var(--actrs-navy);
+  --bs-btn-hover-bg: #0d264d;
+  --bs-btn-hover-border-color: #0d264d;
+  --bs-btn-active-bg: #0d264d;
+  --bs-btn-active-border-color: #0d264d;
+  --bs-btn-disabled-bg: var(--actrs-navy);
+  --bs-btn-disabled-border-color: var(--actrs-navy);
+}
+.btn-outline-primary {
+  --bs-btn-color: var(--actrs-navy);
+  --bs-btn-border-color: var(--actrs-navy);
+  --bs-btn-hover-bg: var(--actrs-navy);
+  --bs-btn-hover-border-color: var(--actrs-navy);
+  --bs-btn-active-bg: var(--actrs-navy);
+  --bs-btn-active-border-color: var(--actrs-navy);
+}
+.text-primary {
+  color: var(--actrs-navy) !important;
+}
+
+/* Top status strip */
+.capture-status-online {
+  background: linear-gradient(90deg, var(--actrs-navy) 0%, var(--actrs-seablue) 100%);
+}
+.capture-status-offline {
+  background: #b3261e;
+}
+
+/* Home screen avatar */
+.capture-avatar {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--actrs-navy), var(--actrs-seablue));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.capture-accent-icon {
+  color: var(--actrs-seablue);
+}
+
+/* Quick-action tiles on Home */
+.capture-tile {
+  border: 1px solid var(--actrs-grey-border);
+  border-radius: var(--actrs-radius);
+  background: var(--actrs-surface);
+  box-shadow: var(--actrs-shadow);
+  padding: 1.1rem 0.5rem;
+  text-align: center;
+  color: var(--actrs-navy);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.capture-tile:hover,
+.capture-tile:active {
+  color: var(--actrs-navy);
+  box-shadow: 0 4px 14px rgba(11, 26, 48, 0.18);
+  transform: translateY(-1px);
+}
+
+/* Bottom tab bar */
+.capture-tabbar {
+  box-shadow: 0 -2px 10px rgba(11, 26, 48, 0.08);
+}
+.capture-tab {
+  color: #8a94a0;
+  font-size: 0.72rem;
+  border-top: 2px solid transparent;
+}
+.capture-tab-active {
+  color: var(--actrs-navy);
+  font-weight: 600;
+  border-top: 2px solid var(--actrs-seablue);
+}
+.capture-tab-label {
+  display: block;
+}

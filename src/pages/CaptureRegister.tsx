@@ -3,6 +3,7 @@ import { useCaptureAuth } from "@contexts/CaptureAuthContext";
 import { captureDb, type OutboxEntry } from "@/lib/offlineDb";
 import { CaptureService } from "@/services/CaptureService";
 import { onSyncChange } from "@/services/SyncEngine";
+import { IconCheckCircle, IconAlertTriangle, IconCloudUp } from "@/components/CaptureIcons";
 import type { AcademicYearRow, TermRow, LevelRow, ClassRow } from "@/types/database";
 
 const RELATIONSHIPS = ["Mother", "Father", "Guardian", "Grandparent", "Sibling", "Other"];
@@ -165,17 +166,17 @@ export function CaptureRegister() {
       <div className="actrs-card p-4">
         {status === "SYNCED" ? (
           <div className="d-flex align-items-center gap-2 mb-2 text-success">
-            <i className="bi bi-check-circle-fill fs-4" />
+            <IconCheckCircle size={26} />
             <h1 className="h5 mb-0">Registered</h1>
           </div>
         ) : status === "FAILED" ? (
           <div className="d-flex align-items-center gap-2 mb-2 text-danger">
-            <i className="bi bi-exclamation-triangle-fill fs-4" />
+            <IconAlertTriangle size={26} />
             <h1 className="h5 mb-0">Sync failed</h1>
           </div>
         ) : (
           <div className="d-flex align-items-center gap-2 mb-2 text-primary">
-            <i className="bi bi-cloud-arrow-up fs-4" />
+            <IconCloudUp size={26} />
             <h1 className="h5 mb-0">Queued</h1>
           </div>
         )}
