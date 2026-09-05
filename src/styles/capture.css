@@ -1,0 +1,40 @@
+/**
+ * Capture app theme - the same "Blue-Black / Navy / Sea Blue / Gold"
+ * tokens as the cloud dashboard (see edulink-web/src/styles/theme.css),
+ * trimmed to just what this smaller, mobile-first app actually uses, so
+ * the two apps read as one product even though they're separate
+ * deployments.
+ */
+:root {
+  --actrs-navy: #123363;
+  --actrs-seablue: #0ea5c4;
+  --actrs-grey-light: #f4f6f9;
+  --actrs-grey-border: #e1e5ea;
+  --actrs-text: #1c2733;
+  --actrs-surface: #ffffff;
+  --actrs-radius: 0.75rem;
+  --actrs-shadow: 0 2px 10px rgba(11, 26, 48, 0.1);
+  --actrs-font: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+
+  --bs-primary: var(--actrs-navy);
+  --bs-body-font-family: var(--actrs-font);
+  --bs-body-color: var(--actrs-text);
+  --bs-body-bg: var(--actrs-grey-light);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--actrs-font);
+}
+
+.actrs-card {
+  border: 1px solid var(--actrs-grey-border);
+  border-radius: var(--actrs-radius);
+  box-shadow: var(--actrs-shadow);
+  background: var(--actrs-surface);
+}
