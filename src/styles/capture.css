@@ -22,6 +22,26 @@
   --bs-body-bg: var(--actrs-grey-light);
 }
 
+/* Same dark-mode token values as the cloud dashboard's theme.css, so
+   both apps look like one product switched to night mode together. The
+   accent (navy/sea-blue) stays the same in both themes - only the
+   page/card surfaces and body text swap - except where navy TEXT would
+   otherwise sit directly on a now-dark card background (see the
+   dark-only overrides below): navy-on-dark-navy has poor contrast, so
+   those specific spots switch to sea-blue instead. */
+[data-bs-theme="dark"] {
+  --actrs-grey-light: #12161c;
+  --actrs-grey-border: #262c35;
+  --actrs-text: #e7ebef;
+  --actrs-surface: #161d29;
+}
+
+[data-bs-theme="dark"] .text-primary,
+[data-bs-theme="dark"] .capture-tile,
+[data-bs-theme="dark"] .capture-tab-active {
+  color: var(--actrs-seablue) !important;
+}
+
 html,
 body,
 #root {
@@ -36,6 +56,12 @@ body {
   border: 1px solid var(--actrs-grey-border);
   border-radius: var(--actrs-radius);
   box-shadow: var(--actrs-shadow);
+  background: var(--actrs-surface);
+}
+
+/* Theme-aware replacement for Bootstrap's literal bg-white/bg-light
+   utilities, which never respond to data-bs-theme. */
+.capture-surface {
   background: var(--actrs-surface);
 }
 

@@ -1,9 +1,10 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useCaptureAuth } from "@contexts/CaptureAuthContext";
+import { useThemeMode } from "@contexts/ThemeContext";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useOutboxStatus } from "@/hooks/useOutboxStatus";
 import { SyncEngine } from "@/services/SyncEngine";
-import { IconHome, IconPersonPlus, IconClipboardCheck, IconSync, IconWifi, IconWifiOff } from "@/components/CaptureIcons";
+import { IconHome, IconPersonPlus, IconClipboardCheck, IconSync, IconWifi, IconWifiOff, IconSun, IconMoon } from "@/components/CaptureIcons";
 
 const NAV_ITEMS = [
   { to: "/", end: true, label: "Home", icon: IconHome },
@@ -22,6 +23,7 @@ export function CaptureLayout() {
   const online = useOnlineStatus();
   const { pending, failed, syncing } = useOutboxStatus();
   const { profile, signOut } = useCaptureAuth();
+  const { mode, toggle } = useThemeMode();
 
   return (
     <div className="capture-shell d-flex flex-column vh-100">
@@ -49,12 +51,19 @@ export function CaptureLayout() {
         <Outlet />
       </main>
 
-      <div className="text-center py-1 border-top bg-white">
+      <div className="d-flex align-items-center justify-content-center gap-3 py-1 border-top capture-surface">
         <button className="btn btn-link btn-sm text-muted text-decoration-none" onClick={signOut}>
           {profile?.full_name ?? "Signed in"} · Sign out
         </button>
+        <button
+          className="btn btn-sm btn-link text-muted p-0"
+          onClick={toggle}
+          title={mode === "light" ? "Switch to dark mode" : "Switch to light mode"}
+        >
+          {mode === "light" ? <IconMoon size={18} /> : <IconSun size={18} />}
+        </button>
       </div>
-      <nav className="d-flex bg-white border-top capture-tabbar">
+      <nav className="d-flex capture-surface border-top capture-tabbar">
         {NAV_ITEMS.map(({ to, end, label, icon: Icon }) => (
           <NavLink
             key={to}
