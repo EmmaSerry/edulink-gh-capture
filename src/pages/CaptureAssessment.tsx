@@ -71,7 +71,17 @@ export function CaptureAssessment() {
       ]);
       if (cancelled) return;
       setTerm(terms.find((t) => t.is_active) ?? null);
-      setClasses(classRows);
+      // classRows comes back in IndexedDB's own storage order, not
+      // curriculum order - sort by the owning level's sort_order (KG1,
+      // KG2, Basic1..6, JHS1..3), then by class name for schools with
+      // more than one class per level, so the picker reads the way a
+      // teacher expects instead of looking shuffled.
+      const levelOrder = new Map(levelRows.map((l) => [l.id, l.sort_order]));
+      const sortedClasses = [...classRows].sort((a, b) => {
+        const byLevel = (levelOrder.get(a.level_id) ?? 0) - (levelOrder.get(b.level_id) ?? 0);
+        return byLevel !== 0 ? byLevel : a.name.localeCompare(b.name);
+      });
+      setClasses(sortedClasses);
       setLevels(levelRows);
       setLoadingContext(false);
     })();

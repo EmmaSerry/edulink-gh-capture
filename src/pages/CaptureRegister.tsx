@@ -70,7 +70,10 @@ export function CaptureRegister() {
     };
   }, []);
 
-  const classes = useMemo(() => allClasses.filter((c) => c.level_id === levelId), [allClasses, levelId]);
+  const classes = useMemo(
+    () => allClasses.filter((c) => c.level_id === levelId).sort((a, b) => a.name.localeCompare(b.name)),
+    [allClasses, levelId]
+  );
 
   useEffect(() => {
     setClassId((current) => (classes.some((c) => c.id === current) ? current : ""));
