@@ -4,6 +4,7 @@ import { captureDb, type OutboxEntry } from "@/lib/offlineDb";
 import { CaptureService } from "@/services/CaptureService";
 import { onSyncChange } from "@/services/SyncEngine";
 import { IconCheckCircle, IconAlertTriangle, IconCloudUp } from "@/components/CaptureIcons";
+import { PhotoPickerField } from "@/components/PhotoPickerField";
 import type { AcademicYearRow, TermRow, LevelRow, ClassRow } from "@/types/database";
 
 const RELATIONSHIPS = ["Mother", "Father", "Guardian", "Grandparent", "Sibling", "Other"];
@@ -37,6 +38,7 @@ export function CaptureRegister() {
   const [guardianFullName, setGuardianFullName] = useState("");
   const [guardianRelationship, setGuardianRelationship] = useState(RELATIONSHIPS[0]);
   const [guardianPhone, setGuardianPhone] = useState("");
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -127,6 +129,7 @@ export function CaptureRegister() {
         guardianFullName: guardianFullName.trim(),
         guardianRelationship,
         guardianPhone: guardianPhone.trim(),
+        photoDataUrl,
       });
       setQueuedName(`${firstName.trim()} ${lastName.trim()}`);
       setQueuedClientId(clientId);
@@ -147,6 +150,7 @@ export function CaptureRegister() {
     setGuardianFullName("");
     setGuardianRelationship(RELATIONSHIPS[0]);
     setGuardianPhone("");
+    setPhotoDataUrl(null);
     setQueuedClientId(null);
     setQueuedEntry(null);
   }
@@ -210,6 +214,11 @@ export function CaptureRegister() {
       {submitError && <div className="alert alert-danger">{submitError}</div>}
 
       <form onSubmit={handleSubmit} className="actrs-card p-3">
+        <h2 className="h6 mb-3">Student photo (optional)</h2>
+        <div className="mb-3">
+          <PhotoPickerField value={photoDataUrl} onChange={setPhotoDataUrl} />
+        </div>
+
         <h2 className="h6 mb-3">Student details</h2>
         <div className="row g-3 mb-3">
           <div className="col-6">

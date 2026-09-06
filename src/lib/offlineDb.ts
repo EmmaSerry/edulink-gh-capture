@@ -61,6 +61,11 @@ export interface RegisterStudentPayload {
   guardianFullName: string;
   guardianRelationship: string;
   guardianPhone: string;
+  /** A small JPEG data URL from PassportPhotoCropper, already
+   *  cropped/compressed entirely on-device - stored as a plain string
+   *  here (not a Blob) so it rides along in the outbox exactly like
+   *  every other field, with no special IndexedDB handling needed. */
+  photoDataUrl?: string | null;
 }
 
 /** Either `studentId` (a real, already-known server UUID) or

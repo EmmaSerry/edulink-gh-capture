@@ -123,11 +123,29 @@ async function syncOne(entry: OutboxEntry, resolvedThisPass: Map<string, string>
       p_guardian_phone: p.guardianPhone,
     });
     resolvedThisPass.set(entry.clientId, student.id);
+
+    // The photo rides along in the same outbox entry but is saved as a
+    // separate request after registration succeeds (register_student()
+    // has no photo parameter) - and deliberately swallowed on failure
+    // rather than thrown: the registration already succeeded and must
+    // not be retried (retrying would call register_student() again and
+    // create a second, duplicate student). A missing photo is a much
+    // smaller problem than a duplicate learner record.
+    let photoWarning: string | null = null;
+    if (p.photoDataUrl) {
+      try {
+        await rest.update("students", { id: `eq.${student.id}` }, { photo_url: p.photoDataUrl });
+        student.photo_url = p.photoDataUrl;
+      } catch (photoErr) {
+        photoWarning = photoErr instanceof Error ? photoErr.message : "Could not save the photo.";
+      }
+    }
+
     await captureDb.students.put(student);
     await captureDb.outbox.update(entry.clientId, {
       status: "SYNCED",
       syncedAt: new Date().toISOString(),
-      resultLabel: student.student_id,
+      resultLabel: photoWarning ? `${student.student_id} (photo not saved: ${photoWarning})` : student.student_id,
     });
     await backfillDependents(entry.clientId, student.id);
     return;
