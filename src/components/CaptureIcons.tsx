@@ -161,3 +161,12 @@ export function IconCash(props: IconProps) {
     </svg>
   );
 }
+
+export function IconChart(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M4 20V10M11 20V4M18 20v-7" />
+      <path d="M2.5 20h19" />
+    </svg>
+  );
+}

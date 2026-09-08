@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { captureDb } from "@/lib/offlineDb";
 import { CaptureService } from "@/services/CaptureService";
 import { useCaptureAuth } from "@/contexts/CaptureAuthContext";
-import type { TermRow, ClassRow, LevelRow, StudentRow, SchoolRow, FeeStructureRow, StudentFeeRow, FeePaymentMethod } from "@/types/database";
+import type { TermRow, ClassRow, StudentRow, SchoolRow, FeeStructureRow, StudentFeeRow, FeePaymentMethod } from "@/types/database";
 
 const FEE_MANAGER_ROLES = new Set(["bursar", "school_admin", "district_admin", "platform_admin"]);
 
@@ -132,7 +132,6 @@ export function CaptureFees() {
   const [term, setTerm] = useState<TermRow | null>(null);
   const [school, setSchool] = useState<SchoolRow | null>(null);
   const [classes, setClasses] = useState<ClassRow[]>([]);
-  const [levels, setLevels] = useState<LevelRow[]>([]);
   const [structures, setStructures] = useState<FeeStructureRow[]>([]);
   const [loadingContext, setLoadingContext] = useState(true);
 
@@ -155,6 +154,10 @@ export function CaptureFees() {
       const [terms, classRows, levelRows, schoolRows, structureRows] = await Promise.all([
         captureDb.terms.toArray(),
         captureDb.classes.toArray(),
+        // Only needed transiently, to sort classes into curriculum
+        // order below - unlike CaptureAssessment/CaptureRemarksAttendance/
+        // CaptureProgress, this screen doesn't branch by assessment_mode,
+        // so there's no reason to hold levels in state here.
         captureDb.levels.orderBy("sort_order").toArray(),
         captureDb.schools.toArray(),
         captureDb.feeStructures.toArray(),
@@ -167,7 +170,6 @@ export function CaptureFees() {
         return byLevel !== 0 ? byLevel : a.name.localeCompare(b.name);
       });
       setClasses(sortedClasses);
-      setLevels(levelRows);
       setSchool(schoolRows[0] ?? null);
       setStructures(structureRows);
       setLoadingContext(false);

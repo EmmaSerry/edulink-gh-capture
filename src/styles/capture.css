@@ -205,3 +205,20 @@ body {
 .capture-tab-label {
   display: block;
 }
+
+/* Progress bars on the offline Progress/Analytics screen */
+.capture-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--actrs-grey-border);
+  overflow: hidden;
+}
+[data-bs-theme="dark"] .capture-progress-track {
+  background: rgba(255, 255, 255, 0.14);
+}
+.capture-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--actrs-seablue);
+  transition: width 0.3s ease;
+}

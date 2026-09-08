@@ -6,7 +6,7 @@ import { useOutboxStatus } from "@/hooks/useOutboxStatus";
 import { LookupSyncService } from "@/services/LookupSyncService";
 import { SyncEngine } from "@/services/SyncEngine";
 import { getLastLookupSyncAt, captureDb } from "@/lib/offlineDb";
-import { IconPersonPlus, IconClipboardCheck, IconNotebook, IconCash, IconSync } from "@/components/CaptureIcons";
+import { IconPersonPlus, IconClipboardCheck, IconNotebook, IconCash, IconChart, IconSync } from "@/components/CaptureIcons";
 
 // Same role set as CaptureLayout.tsx / CaptureFees.tsx.
 const FEE_MANAGER_ROLES = new Set(["bursar", "school_admin", "district_admin", "platform_admin"]);
@@ -131,6 +131,12 @@ export function CaptureHome() {
             </Link>
           </div>
         )}
+        <div className="col-6">
+          <Link to="/progress" className="capture-tile text-decoration-none d-block">
+            <IconChart size={26} className="mb-2" />
+            <span>Class progress</span>
+          </Link>
+        </div>
       </div>
     </div>
   );

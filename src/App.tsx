@@ -9,6 +9,7 @@ import { CaptureRegister } from "@pages/CaptureRegister";
 import { CaptureAssessment } from "@pages/CaptureAssessment";
 import { CaptureRemarksAttendance } from "@pages/CaptureRemarksAttendance";
 import { CaptureFees } from "@pages/CaptureFees";
+import { CaptureProgress } from "@pages/CaptureProgress";
 import { CaptureSyncStatus } from "@pages/CaptureSyncStatus";
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/assessment" element={<CaptureAssessment />} />
             <Route path="/remarks" element={<CaptureRemarksAttendance />} />
             <Route path="/fees" element={<CaptureFees />} />
+            <Route path="/progress" element={<CaptureProgress />} />
             <Route path="/sync" element={<CaptureSyncStatus />} />
           </Route>
         </Routes>
