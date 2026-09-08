@@ -6,7 +6,7 @@ import { useOutboxStatus } from "@/hooks/useOutboxStatus";
 import { LookupSyncService } from "@/services/LookupSyncService";
 import { SyncEngine } from "@/services/SyncEngine";
 import { getLastLookupSyncAt, captureDb } from "@/lib/offlineDb";
-import { IconPersonPlus, IconClipboardCheck, IconSync } from "@/components/CaptureIcons";
+import { IconPersonPlus, IconClipboardCheck, IconNotebook, IconSync } from "@/components/CaptureIcons";
 import type { TermRow } from "@/types/database";
 
 function formatWhen(iso: string | null): string {
@@ -112,6 +112,12 @@ export function CaptureHome() {
           <Link to="/assessment" className="capture-tile text-decoration-none d-block">
             <IconClipboardCheck size={26} className="mb-2" />
             <span>Enter assessment</span>
+          </Link>
+        </div>
+        <div className="col-6">
+          <Link to="/remarks" className="capture-tile text-decoration-none d-block">
+            <IconNotebook size={26} className="mb-2" />
+            <span>Remarks &amp; attendance</span>
           </Link>
         </div>
       </div>

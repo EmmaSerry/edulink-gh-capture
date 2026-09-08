@@ -5,7 +5,13 @@
  * after enqueueing, so it sends immediately when there IS a connection)
  * is solely responsible for actually reaching the server.
  */
-import { captureDb, type RegisterStudentPayload, type UpsertScorePayload, type UpsertSkillRatingPayload } from "@/lib/offlineDb";
+import {
+  captureDb,
+  type RegisterStudentPayload,
+  type UpsertScorePayload,
+  type UpsertSkillRatingPayload,
+  type UpsertReportFieldsPayload,
+} from "@/lib/offlineDb";
 import { SyncEngine } from "@/services/SyncEngine";
 
 function newClientId(): string {
@@ -50,6 +56,22 @@ export const CaptureService = {
     await captureDb.outbox.add({
       clientId,
       type: "UPSERT_SKILL_RATING",
+      payload,
+      status: "PENDING",
+      error: null,
+      createdAt: new Date().toISOString(),
+      syncedAt: null,
+      resultLabel: null,
+    });
+    void SyncEngine.run();
+    return clientId;
+  },
+
+  async upsertReportFields(payload: UpsertReportFieldsPayload): Promise<string> {
+    const clientId = newClientId();
+    await captureDb.outbox.add({
+      clientId,
+      type: "UPSERT_REPORT_FIELDS",
       payload,
       status: "PENDING",
       error: null,

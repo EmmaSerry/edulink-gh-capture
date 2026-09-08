@@ -43,9 +43,11 @@ import type {
   SkillAssessmentRecordRow,
   AssessmentSessionRow,
   UserProfileRow,
+  SchoolRow,
+  ReportRecordRow,
 } from "@/types/database";
 
-export type OutboxActionType = "REGISTER_STUDENT" | "UPSERT_SCORE" | "UPSERT_SKILL_RATING";
+export type OutboxActionType = "REGISTER_STUDENT" | "UPSERT_SCORE" | "UPSERT_SKILL_RATING" | "UPSERT_REPORT_FIELDS";
 export type OutboxStatus = "PENDING" | "SYNCING" | "SYNCED" | "FAILED";
 
 export interface RegisterStudentPayload {
@@ -94,7 +96,24 @@ export interface UpsertSkillRatingPayload {
   comment: string | null;
 }
 
-export type OutboxPayload = RegisterStudentPayload | UpsertScorePayload | UpsertSkillRatingPayload;
+/** Attendance plus the free-text remarks fields, one row per
+ *  student+term - the offline counterpart of CloudReportRecordService.
+ *  upsertFields(). `changes` only ever carries the fields the Remarks &
+ *  attendance screen actually edited (never a full row), same as the
+ *  cloud app's upsert_report_fields() RPC expects. */
+export interface UpsertReportFieldsPayload {
+  studentId?: string;
+  studentClientId?: string;
+  termId: string;
+  classId: string;
+  changes: Partial<ReportRecordRow>;
+}
+
+export type OutboxPayload =
+  | RegisterStudentPayload
+  | UpsertScorePayload
+  | UpsertSkillRatingPayload
+  | UpsertReportFieldsPayload;
 
 export interface OutboxEntry {
   clientId: string;
@@ -134,6 +153,8 @@ export class CaptureDatabase extends Dexie {
   skillRatings!: Table<SkillAssessmentRecordRow, string>;
   sessions!: Table<CachedSession, string>;
   outbox!: Table<OutboxEntry, string>;
+  schools!: Table<SchoolRow, string>;
+  reportRecords!: Table<ReportRecordRow, string>;
 
   constructor() {
     super("edulink-capture-db");
@@ -152,6 +173,15 @@ export class CaptureDatabase extends Dexie {
       skillRatings: "id, student_id, term_id, skill_id, [student_id+term_id+skill_id]",
       sessions: "cacheKey, class_id, term_id",
       outbox: "clientId, status, createdAt, type",
+    });
+    // v2: caches needed for offline Remarks & attendance (school profile,
+    // for the headteacher-name prefill; report_records, the same table
+    // CloudReportRemarksEntry reads/writes). Existing v1 tables are
+    // carried forward unchanged - Dexie only needs the tables that are
+    // new or whose schema changed declared here.
+    this.version(2).stores({
+      schools: "id",
+      reportRecords: "id, student_id, term_id, [student_id+term_id]",
     });
   }
 }

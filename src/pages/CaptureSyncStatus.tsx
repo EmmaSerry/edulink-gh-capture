@@ -7,6 +7,7 @@ const TYPE_LABEL: Record<OutboxEntry["type"], string> = {
   REGISTER_STUDENT: "Student registration",
   UPSERT_SCORE: "Score entry",
   UPSERT_SKILL_RATING: "Skill rating",
+  UPSERT_REPORT_FIELDS: "Remarks/attendance",
 };
 
 const STATUS_BADGE: Record<OutboxEntry["status"], string> = {

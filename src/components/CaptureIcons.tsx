@@ -141,3 +141,13 @@ export function IconMoon(props: IconProps) {
     </svg>
   );
 }
+
+export function IconNotebook(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="4.5" y="3" width="15" height="18" rx="2" />
+      <path d="M8 3v18" />
+      <path d="M12 8h5M12 12h5M12 16h3" />
+    </svg>
+  );
+}

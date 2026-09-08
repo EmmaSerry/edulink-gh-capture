@@ -21,8 +21,21 @@
  * button) - not before.
  */
 import { rest } from "@/lib/supabaseClient";
-import { captureDb, type OutboxEntry, type RegisterStudentPayload, type UpsertScorePayload, type UpsertSkillRatingPayload } from "@/lib/offlineDb";
-import type { StudentRow, AssessmentSessionRow, ScoreRecordRow, SkillAssessmentRecordRow } from "@/types/database";
+import {
+  captureDb,
+  type OutboxEntry,
+  type RegisterStudentPayload,
+  type UpsertScorePayload,
+  type UpsertSkillRatingPayload,
+  type UpsertReportFieldsPayload,
+} from "@/lib/offlineDb";
+import type {
+  StudentRow,
+  AssessmentSessionRow,
+  ScoreRecordRow,
+  SkillAssessmentRecordRow,
+  ReportRecordRow,
+} from "@/types/database";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -57,7 +70,7 @@ async function backfillDependents(registrationClientId: string, realStudentId: s
   const all = await captureDb.outbox.where("status").anyOf(["PENDING", "FAILED"]).toArray();
   for (const entry of all) {
     if (entry.type === "REGISTER_STUDENT") continue;
-    const payload = entry.payload as UpsertScorePayload | UpsertSkillRatingPayload;
+    const payload = entry.payload as UpsertScorePayload | UpsertSkillRatingPayload | UpsertReportFieldsPayload;
     if (payload.studentClientId !== registrationClientId) continue;
     await captureDb.outbox.update(entry.clientId, {
       payload: { ...payload, studentId: realStudentId, studentClientId: undefined },
@@ -176,22 +189,46 @@ async function syncOne(entry: OutboxEntry, resolvedThisPass: Map<string, string>
     return;
   }
 
-  // UPSERT_SKILL_RATING
-  const p = entry.payload as UpsertSkillRatingPayload;
+  if (entry.type === "UPSERT_SKILL_RATING") {
+    const p = entry.payload as UpsertSkillRatingPayload;
+    const studentId = p.studentId ?? (p.studentClientId ? resolvedThisPass.get(p.studentClientId) : undefined);
+    if (!studentId) {
+      throw new Error("Waiting on this student's registration to sync first - will retry automatically.");
+    }
+    const sessionId = await resolveSessionId(p.classId, p.termId);
+    const rec = await rest.rpc<SkillAssessmentRecordRow>("upsert_skill_rating", {
+      p_student_id: studentId,
+      p_term_id: p.termId,
+      p_skill_id: p.skillId,
+      p_rating: p.rating,
+      p_comment: p.comment,
+      p_session_id: sessionId,
+    });
+    await captureDb.skillRatings.put(rec);
+    await captureDb.outbox.update(entry.clientId, {
+      status: "SYNCED",
+      syncedAt: new Date().toISOString(),
+      resultLabel: null,
+    });
+    return;
+  }
+
+  // UPSERT_REPORT_FIELDS - attendance + remarks, same upsert_report_fields()
+  // RPC the cloud app's Remarks & attendance screen calls, so a
+  // partial `changes` object here behaves identically once synced.
+  const p = entry.payload as UpsertReportFieldsPayload;
   const studentId = p.studentId ?? (p.studentClientId ? resolvedThisPass.get(p.studentClientId) : undefined);
   if (!studentId) {
     throw new Error("Waiting on this student's registration to sync first - will retry automatically.");
   }
   const sessionId = await resolveSessionId(p.classId, p.termId);
-  const rec = await rest.rpc<SkillAssessmentRecordRow>("upsert_skill_rating", {
+  const rec = await rest.rpc<ReportRecordRow>("upsert_report_fields", {
     p_student_id: studentId,
     p_term_id: p.termId,
-    p_skill_id: p.skillId,
-    p_rating: p.rating,
-    p_comment: p.comment,
+    p_changes: p.changes,
     p_session_id: sessionId,
   });
-  await captureDb.skillRatings.put(rec);
+  await captureDb.reportRecords.put(rec);
   await captureDb.outbox.update(entry.clientId, {
     status: "SYNCED",
     syncedAt: new Date().toISOString(),

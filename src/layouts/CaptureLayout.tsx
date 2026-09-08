@@ -4,12 +4,23 @@ import { useThemeMode } from "@contexts/ThemeContext";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useOutboxStatus } from "@/hooks/useOutboxStatus";
 import { SyncEngine } from "@/services/SyncEngine";
-import { IconHome, IconPersonPlus, IconClipboardCheck, IconSync, IconWifi, IconWifiOff, IconSun, IconMoon } from "@/components/CaptureIcons";
+import {
+  IconHome,
+  IconPersonPlus,
+  IconClipboardCheck,
+  IconNotebook,
+  IconSync,
+  IconWifi,
+  IconWifiOff,
+  IconSun,
+  IconMoon,
+} from "@/components/CaptureIcons";
 
 const NAV_ITEMS = [
   { to: "/", end: true, label: "Home", icon: IconHome },
   { to: "/register", end: false, label: "Register", icon: IconPersonPlus },
   { to: "/assessment", end: false, label: "Assessment", icon: IconClipboardCheck },
+  { to: "/remarks", end: false, label: "Remarks", icon: IconNotebook },
   { to: "/sync", end: false, label: "Sync", icon: IconSync },
 ] as const;
 

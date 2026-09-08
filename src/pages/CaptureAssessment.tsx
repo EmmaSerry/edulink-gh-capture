@@ -12,6 +12,24 @@ import type {
   StudentRow,
 } from "@/types/database";
 
+/** Same quick-fill defaults as the cloud app's CloudAssessmentWorkspace
+ *  (Gold/Silver/Bronze each suggest a standard comment the first time a
+ *  rating is picked) - kept in sync with that copy so a rating entered
+ *  offline behaves identically once it syncs. Deliberately doesn't
+ *  cover X/O - those aren't proficiency levels, so there's no "how they
+ *  did" comment to suggest. */
+const DEFAULT_SKILL_COMMENT: Record<string, string> = {
+  G: "Keep it up",
+  S: "Can do better",
+  B: "More room for improvement",
+};
+
+/** Every phrase this app has ever auto-filled - used to tell "the
+ *  teacher typed their own note" apart from "this is still whatever we
+ *  last auto-filled" so correcting a rating can safely replace the
+ *  comment instead of only filling it in when blank. */
+const KNOWN_DEFAULT_COMMENTS = new Set(Object.values(DEFAULT_SKILL_COMMENT));
+
 function fullNameOf(s: StudentRow): string {
   return [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(" ");
 }
@@ -221,6 +239,16 @@ export function CaptureAssessment() {
     const existing = ratings.get(key) ?? { rating: null, comment: null };
     const rating = (raw === "" ? null : raw) as SkillRating | null;
     if (existing.rating === rating) return;
+    // Same fix as the cloud app: apply the quick-fill comment whenever
+    // the comment cell is empty OR still holds a previous auto-fill, so
+    // correcting a mis-picked rating (Gold -> Silver, say) updates the
+    // comment to match instead of leaving the old rating's default
+    // behind. A comment the teacher actually typed themselves is never
+    // touched. X/O have no default of their own, so a leftover default
+    // is cleared rather than left next to "Not assessed"/"Absent".
+    const existingIsBlankOrDefault =
+      !existing.comment || existing.comment.trim() === "" || KNOWN_DEFAULT_COMMENTS.has(existing.comment.trim());
+    const comment = existingIsBlankOrDefault ? DEFAULT_SKILL_COMMENT[rating ?? ""] ?? null : existing.comment;
     setSavingKey(`${key}:rating`);
     void CaptureService.upsertSkillRating({
       studentId,
@@ -228,11 +256,11 @@ export function CaptureAssessment() {
       skillId,
       classId,
       rating,
-      comment: existing.comment,
+      comment,
     }).then(() => {
       setRatings((prev) => {
         const next = new Map(prev);
-        next.set(key, { ...existing, rating });
+        next.set(key, { rating, comment });
         return next;
       });
       setSavingKey(null);

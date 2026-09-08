@@ -28,11 +28,13 @@ import type {
   EnrollmentRow,
   ScoreRecordRow,
   SkillAssessmentRecordRow,
+  SchoolRow,
+  ReportRecordRow,
 } from "@/types/database";
 
 export const LookupSyncService = {
   async syncAll(): Promise<void> {
-    const [academicYears, terms, levels, classes, subjects, learningAreas, skills, students] = await Promise.all([
+    const [academicYears, terms, levels, classes, subjects, learningAreas, skills, students, schools] = await Promise.all([
       rest.select<AcademicYearRow>("academic_years"),
       rest.select<TermRow>("terms"),
       rest.select<LevelRow>("levels", { filters: { is_active: "eq.true" }, order: "sort_order.asc" }),
@@ -41,17 +43,24 @@ export const LookupSyncService = {
       rest.select<LearningAreaRow>("learning_areas", { filters: { is_active: "eq.true" }, order: "sort_order.asc" }),
       rest.select<SkillRow>("skills", { filters: { is_active: "eq.true" }, order: "sort_order.asc" }),
       rest.select<StudentRow>("students"),
+      // Just the caller's own school - RLS scopes this the same way it
+      // scopes everything else fetched here. Needed so the offline
+      // Remarks & attendance screen can prefill the headteacher's name
+      // exactly like CloudReportRemarksEntry does.
+      rest.select<SchoolRow>("schools"),
     ]);
 
     const activeTerm = terms.find((t) => t.is_active) ?? null;
     let enrollments: EnrollmentRow[] = [];
     let scoreRecords: ScoreRecordRow[] = [];
     let skillRatings: SkillAssessmentRecordRow[] = [];
+    let reportRecords: ReportRecordRow[] = [];
     if (activeTerm) {
-      [enrollments, scoreRecords, skillRatings] = await Promise.all([
+      [enrollments, scoreRecords, skillRatings, reportRecords] = await Promise.all([
         rest.select<EnrollmentRow>("enrollments", { filters: { term_id: `eq.${activeTerm.id}` } }),
         rest.select<ScoreRecordRow>("score_records", { filters: { term_id: `eq.${activeTerm.id}` } }),
         rest.select<SkillAssessmentRecordRow>("skill_assessment_records", { filters: { term_id: `eq.${activeTerm.id}` } }),
+        rest.select<ReportRecordRow>("report_records", { filters: { term_id: `eq.${activeTerm.id}` } }),
       ]);
     }
 
@@ -69,6 +78,8 @@ export const LookupSyncService = {
         captureDb.enrollments,
         captureDb.scoreRecords,
         captureDb.skillRatings,
+        captureDb.schools,
+        captureDb.reportRecords,
         captureDb.meta,
       ],
       async () => {
@@ -94,6 +105,10 @@ export const LookupSyncService = {
         await captureDb.scoreRecords.bulkAdd(scoreRecords);
         await captureDb.skillRatings.clear();
         await captureDb.skillRatings.bulkAdd(skillRatings);
+        await captureDb.schools.clear();
+        await captureDb.schools.bulkAdd(schools);
+        await captureDb.reportRecords.clear();
+        await captureDb.reportRecords.bulkAdd(reportRecords);
         await captureDb.meta.put({ key: "lastLookupSyncAt", value: new Date().toISOString() });
       }
     );
