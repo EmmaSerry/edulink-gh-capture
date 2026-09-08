@@ -9,6 +9,7 @@ import {
   IconPersonPlus,
   IconClipboardCheck,
   IconNotebook,
+  IconCash,
   IconSync,
   IconWifi,
   IconWifiOff,
@@ -16,13 +17,21 @@ import {
   IconMoon,
 } from "@/components/CaptureIcons";
 
-const NAV_ITEMS = [
+// Same role set as CaptureFees.tsx / the cloud app's RequireAdmin
+// roles="fees" - kept as its own small copy here (not imported) since
+// it's only ever this one boolean check in each place.
+const FEE_MANAGER_ROLES = new Set(["bursar", "school_admin", "district_admin", "platform_admin"]);
+
+const BASE_NAV_ITEMS = [
   { to: "/", end: true, label: "Home", icon: IconHome },
   { to: "/register", end: false, label: "Register", icon: IconPersonPlus },
   { to: "/assessment", end: false, label: "Assessment", icon: IconClipboardCheck },
   { to: "/remarks", end: false, label: "Remarks", icon: IconNotebook },
-  { to: "/sync", end: false, label: "Sync", icon: IconSync },
 ] as const;
+
+const FEES_NAV_ITEM = { to: "/fees", end: false, label: "Fees", icon: IconCash } as const;
+
+const SYNC_NAV_ITEM = { to: "/sync", end: false, label: "Sync", icon: IconSync } as const;
 
 /**
  * Phone-first app shell: a status strip up top (connection state +
@@ -35,6 +44,11 @@ export function CaptureLayout() {
   const { pending, failed, syncing } = useOutboxStatus();
   const { profile, signOut } = useCaptureAuth();
   const { mode, toggle } = useThemeMode();
+  const navItems = [
+    ...BASE_NAV_ITEMS,
+    ...(profile && FEE_MANAGER_ROLES.has(profile.role) ? [FEES_NAV_ITEM] : []),
+    SYNC_NAV_ITEM,
+  ];
 
   return (
     <div className="capture-shell d-flex flex-column vh-100">
@@ -75,7 +89,7 @@ export function CaptureLayout() {
         </button>
       </div>
       <nav className="d-flex capture-surface border-top capture-tabbar">
-        {NAV_ITEMS.map(({ to, end, label, icon: Icon }) => (
+        {navItems.map(({ to, end, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

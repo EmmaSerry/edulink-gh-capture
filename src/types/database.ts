@@ -345,3 +345,55 @@ export interface ReportTemplateRow {
   component_version: number;
   is_active: boolean;
 }
+
+/** Fee management (private schools only, bursar/school_admin/
+ *  district_admin/platform_admin) - see edulink_gh_phase1a_fees.sql.
+ *  Mirrors the cloud app's fee types one-for-one; StudentFeeRow is the
+ *  one addition here (the cloud app never selects the raw student_fees
+ *  table directly, only through the get_student_fee_summary() RPC, but
+ *  offline capture needs the raw rows to compute the same summary
+ *  locally with no network - see the "paid" totals rolled up from
+ *  reportRecords... no, from cached feePayments in offlineDb.ts). */
+export type FeePaymentMethod = "cash" | "mobile_money" | "bank_transfer" | "cheque" | "paystack" | "other";
+
+export interface FeeStructureRow {
+  id: string;
+  school_id: string;
+  academic_year_id: string;
+  term_id: string;
+  level_id: string | null;
+  name: string;
+  amount: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** One row per (student, fee_structure) once generated in the cloud
+ *  dashboard - the amount snapshot at generation time. Fee structure
+ *  setup and "generate this term's fees" are deliberately NOT offered
+ *  offline (office/admin setup tasks, not field data capture) - this
+ *  table is read-only here, populated by LookupSyncService, so a
+ *  bursar can record payments against fees already generated online. */
+export interface StudentFeeRow {
+  id: string;
+  school_id: string;
+  student_id: string;
+  term_id: string;
+  fee_structure_id: string;
+  amount_due: number;
+  created_at: string;
+}
+
+export interface FeePaymentRow {
+  id: string;
+  school_id: string;
+  student_fee_id: string;
+  amount: number;
+  method: FeePaymentMethod;
+  reference: string | null;
+  notes: string | null;
+  recorded_by: string | null;
+  paid_at: string;
+  created_at: string;
+}

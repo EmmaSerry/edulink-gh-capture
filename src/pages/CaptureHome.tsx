@@ -6,7 +6,10 @@ import { useOutboxStatus } from "@/hooks/useOutboxStatus";
 import { LookupSyncService } from "@/services/LookupSyncService";
 import { SyncEngine } from "@/services/SyncEngine";
 import { getLastLookupSyncAt, captureDb } from "@/lib/offlineDb";
-import { IconPersonPlus, IconClipboardCheck, IconNotebook, IconSync } from "@/components/CaptureIcons";
+import { IconPersonPlus, IconClipboardCheck, IconNotebook, IconCash, IconSync } from "@/components/CaptureIcons";
+
+// Same role set as CaptureLayout.tsx / CaptureFees.tsx.
+const FEE_MANAGER_ROLES = new Set(["bursar", "school_admin", "district_admin", "platform_admin"]);
 import type { TermRow } from "@/types/database";
 
 function formatWhen(iso: string | null): string {
@@ -120,6 +123,14 @@ export function CaptureHome() {
             <span>Remarks &amp; attendance</span>
           </Link>
         </div>
+        {profile && FEE_MANAGER_ROLES.has(profile.role) && (
+          <div className="col-6">
+            <Link to="/fees" className="capture-tile text-decoration-none d-block">
+              <IconCash size={26} className="mb-2" />
+              <span>Record fee payment</span>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

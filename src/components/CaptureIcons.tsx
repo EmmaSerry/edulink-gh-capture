@@ -151,3 +151,13 @@ export function IconNotebook(props: IconProps) {
     </svg>
   );
 }
+
+export function IconCash(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="2.5" y="6" width="19" height="12" rx="2" />
+      <circle cx="12" cy="12" r="2.75" />
+      <path d="M6 6v0M18 18v0" />
+    </svg>
+  );
+}

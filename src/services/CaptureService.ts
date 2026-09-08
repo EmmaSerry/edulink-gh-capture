@@ -11,6 +11,7 @@ import {
   type UpsertScorePayload,
   type UpsertSkillRatingPayload,
   type UpsertReportFieldsPayload,
+  type RecordPaymentPayload,
 } from "@/lib/offlineDb";
 import { SyncEngine } from "@/services/SyncEngine";
 
@@ -72,6 +73,22 @@ export const CaptureService = {
     await captureDb.outbox.add({
       clientId,
       type: "UPSERT_REPORT_FIELDS",
+      payload,
+      status: "PENDING",
+      error: null,
+      createdAt: new Date().toISOString(),
+      syncedAt: null,
+      resultLabel: null,
+    });
+    void SyncEngine.run();
+    return clientId;
+  },
+
+  async recordPayment(payload: RecordPaymentPayload): Promise<string> {
+    const clientId = newClientId();
+    await captureDb.outbox.add({
+      clientId,
+      type: "RECORD_PAYMENT",
       payload,
       status: "PENDING",
       error: null,

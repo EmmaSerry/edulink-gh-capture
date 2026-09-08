@@ -30,6 +30,9 @@ import type {
   SkillAssessmentRecordRow,
   SchoolRow,
   ReportRecordRow,
+  FeeStructureRow,
+  StudentFeeRow,
+  FeePaymentRow,
 } from "@/types/database";
 
 export const LookupSyncService = {
@@ -55,14 +58,29 @@ export const LookupSyncService = {
     let scoreRecords: ScoreRecordRow[] = [];
     let skillRatings: SkillAssessmentRecordRow[] = [];
     let reportRecords: ReportRecordRow[] = [];
+    let feeStructures: FeeStructureRow[] = [];
+    let studentFees: StudentFeeRow[] = [];
     if (activeTerm) {
-      [enrollments, scoreRecords, skillRatings, reportRecords] = await Promise.all([
+      [enrollments, scoreRecords, skillRatings, reportRecords, feeStructures, studentFees] = await Promise.all([
         rest.select<EnrollmentRow>("enrollments", { filters: { term_id: `eq.${activeTerm.id}` } }),
         rest.select<ScoreRecordRow>("score_records", { filters: { term_id: `eq.${activeTerm.id}` } }),
         rest.select<SkillAssessmentRecordRow>("skill_assessment_records", { filters: { term_id: `eq.${activeTerm.id}` } }),
         rest.select<ReportRecordRow>("report_records", { filters: { term_id: `eq.${activeTerm.id}` } }),
+        // Fee structure setup and "generate this term's fees" stay
+        // office/online-only - these two reads exist purely so a
+        // bursar can record a payment against a fee already generated
+        // online, with no signal. RLS returns an empty list here for
+        // anyone who isn't a fee manager (bursar/school_admin/
+        // district_admin/platform_admin) - not an error, just nothing
+        // to cache, same as every other role-scoped table.
+        rest.select<FeeStructureRow>("fee_structures", { filters: { term_id: `eq.${activeTerm.id}` } }),
+        rest.select<StudentFeeRow>("student_fees", { filters: { term_id: `eq.${activeTerm.id}` } }),
       ]);
     }
+    // Not term-scoped in the schema (fee_payments only carries a
+    // student_fee_id) - fetched in full, same reasoning as `students`
+    // above. RLS still limits this to the caller's own school.
+    const feePayments = await rest.select<FeePaymentRow>("fee_payments");
 
     await captureDb.transaction(
       "rw",
@@ -80,6 +98,9 @@ export const LookupSyncService = {
         captureDb.skillRatings,
         captureDb.schools,
         captureDb.reportRecords,
+        captureDb.feeStructures,
+        captureDb.studentFees,
+        captureDb.feePayments,
         captureDb.meta,
       ],
       async () => {
@@ -109,6 +130,12 @@ export const LookupSyncService = {
         await captureDb.schools.bulkAdd(schools);
         await captureDb.reportRecords.clear();
         await captureDb.reportRecords.bulkAdd(reportRecords);
+        await captureDb.feeStructures.clear();
+        await captureDb.feeStructures.bulkAdd(feeStructures);
+        await captureDb.studentFees.clear();
+        await captureDb.studentFees.bulkAdd(studentFees);
+        await captureDb.feePayments.clear();
+        await captureDb.feePayments.bulkAdd(feePayments);
         await captureDb.meta.put({ key: "lastLookupSyncAt", value: new Date().toISOString() });
       }
     );

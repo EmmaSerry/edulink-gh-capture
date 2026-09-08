@@ -45,9 +45,18 @@ import type {
   UserProfileRow,
   SchoolRow,
   ReportRecordRow,
+  FeeStructureRow,
+  StudentFeeRow,
+  FeePaymentRow,
+  FeePaymentMethod,
 } from "@/types/database";
 
-export type OutboxActionType = "REGISTER_STUDENT" | "UPSERT_SCORE" | "UPSERT_SKILL_RATING" | "UPSERT_REPORT_FIELDS";
+export type OutboxActionType =
+  | "REGISTER_STUDENT"
+  | "UPSERT_SCORE"
+  | "UPSERT_SKILL_RATING"
+  | "UPSERT_REPORT_FIELDS"
+  | "RECORD_PAYMENT";
 export type OutboxStatus = "PENDING" | "SYNCING" | "SYNCED" | "FAILED";
 
 export interface RegisterStudentPayload {
@@ -109,11 +118,26 @@ export interface UpsertReportFieldsPayload {
   changes: Partial<ReportRecordRow>;
 }
 
+/** A payment against an already-generated student_fees row (see
+ *  StudentFeeRow) - no studentClientId dependency the way scores/
+ *  ratings/report-fields have, because fee generation only happens
+ *  online in the office, well before a student_fee_id can exist to
+ *  record a payment against; a payment can only ever reference a
+ *  student_fee_id that was already cached from the server. */
+export interface RecordPaymentPayload {
+  studentFeeId: string;
+  amount: number;
+  method: FeePaymentMethod;
+  reference?: string | null;
+  notes?: string | null;
+}
+
 export type OutboxPayload =
   | RegisterStudentPayload
   | UpsertScorePayload
   | UpsertSkillRatingPayload
-  | UpsertReportFieldsPayload;
+  | UpsertReportFieldsPayload
+  | RecordPaymentPayload;
 
 export interface OutboxEntry {
   clientId: string;
@@ -155,6 +179,9 @@ export class CaptureDatabase extends Dexie {
   outbox!: Table<OutboxEntry, string>;
   schools!: Table<SchoolRow, string>;
   reportRecords!: Table<ReportRecordRow, string>;
+  feeStructures!: Table<FeeStructureRow, string>;
+  studentFees!: Table<StudentFeeRow, string>;
+  feePayments!: Table<FeePaymentRow, string>;
 
   constructor() {
     super("edulink-capture-db");
@@ -182,6 +209,14 @@ export class CaptureDatabase extends Dexie {
     this.version(2).stores({
       schools: "id",
       reportRecords: "id, student_id, term_id, [student_id+term_id]",
+    });
+    // v3: caches needed for offline fee payment recording. Deliberately
+    // read-only here (see StudentFeeRow) - fee structure setup and
+    // generating a term's fees stay office/online-only tasks.
+    this.version(3).stores({
+      feeStructures: "id, term_id, level_id",
+      studentFees: "id, student_id, term_id, fee_structure_id, [student_id+term_id]",
+      feePayments: "id, student_fee_id",
     });
   }
 }

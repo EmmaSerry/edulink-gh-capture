@@ -28,6 +28,7 @@ import {
   type UpsertScorePayload,
   type UpsertSkillRatingPayload,
   type UpsertReportFieldsPayload,
+  type RecordPaymentPayload,
 } from "@/lib/offlineDb";
 import type {
   StudentRow,
@@ -35,6 +36,7 @@ import type {
   ScoreRecordRow,
   SkillAssessmentRecordRow,
   ReportRecordRow,
+  FeePaymentRow,
 } from "@/types/database";
 
 type Listener = () => void;
@@ -69,7 +71,11 @@ async function resolveSessionId(classId: string, termId: string): Promise<string
 async function backfillDependents(registrationClientId: string, realStudentId: string): Promise<void> {
   const all = await captureDb.outbox.where("status").anyOf(["PENDING", "FAILED"]).toArray();
   for (const entry of all) {
-    if (entry.type === "REGISTER_STUDENT") continue;
+    // RECORD_PAYMENT never depends on a pending registration (see
+    // RecordPaymentPayload) - excluded here rather than just relying on
+    // the type cast below, since its payload shape doesn't carry a
+    // studentClientId field at all.
+    if (entry.type === "REGISTER_STUDENT" || entry.type === "RECORD_PAYMENT") continue;
     const payload = entry.payload as UpsertScorePayload | UpsertSkillRatingPayload | UpsertReportFieldsPayload;
     if (payload.studentClientId !== registrationClientId) continue;
     await captureDb.outbox.update(entry.clientId, {
@@ -213,22 +219,43 @@ async function syncOne(entry: OutboxEntry, resolvedThisPass: Map<string, string>
     return;
   }
 
-  // UPSERT_REPORT_FIELDS - attendance + remarks, same upsert_report_fields()
-  // RPC the cloud app's Remarks & attendance screen calls, so a
-  // partial `changes` object here behaves identically once synced.
-  const p = entry.payload as UpsertReportFieldsPayload;
-  const studentId = p.studentId ?? (p.studentClientId ? resolvedThisPass.get(p.studentClientId) : undefined);
-  if (!studentId) {
-    throw new Error("Waiting on this student's registration to sync first - will retry automatically.");
+  if (entry.type === "UPSERT_REPORT_FIELDS") {
+    // Attendance + remarks, same upsert_report_fields() RPC the cloud
+    // app's Remarks & attendance screen calls, so a partial `changes`
+    // object here behaves identically once synced.
+    const p = entry.payload as UpsertReportFieldsPayload;
+    const studentId = p.studentId ?? (p.studentClientId ? resolvedThisPass.get(p.studentClientId) : undefined);
+    if (!studentId) {
+      throw new Error("Waiting on this student's registration to sync first - will retry automatically.");
+    }
+    const sessionId = await resolveSessionId(p.classId, p.termId);
+    const rec = await rest.rpc<ReportRecordRow>("upsert_report_fields", {
+      p_student_id: studentId,
+      p_term_id: p.termId,
+      p_changes: p.changes,
+      p_session_id: sessionId,
+    });
+    await captureDb.reportRecords.put(rec);
+    await captureDb.outbox.update(entry.clientId, {
+      status: "SYNCED",
+      syncedAt: new Date().toISOString(),
+      resultLabel: null,
+    });
+    return;
   }
-  const sessionId = await resolveSessionId(p.classId, p.termId);
-  const rec = await rest.rpc<ReportRecordRow>("upsert_report_fields", {
-    p_student_id: studentId,
-    p_term_id: p.termId,
-    p_changes: p.changes,
-    p_session_id: sessionId,
+
+  // RECORD_PAYMENT - references an already-generated student_fees row
+  // (see RecordPaymentPayload), so there is no student-registration
+  // dependency to resolve here, unlike every other action above.
+  const p = entry.payload as RecordPaymentPayload;
+  const payment = await rest.rpc<FeePaymentRow>("record_payment", {
+    p_student_fee_id: p.studentFeeId,
+    p_amount: p.amount,
+    p_method: p.method,
+    p_reference: p.reference ?? null,
+    p_notes: p.notes ?? null,
   });
-  await captureDb.reportRecords.put(rec);
+  await captureDb.feePayments.put(payment);
   await captureDb.outbox.update(entry.clientId, {
     status: "SYNCED",
     syncedAt: new Date().toISOString(),
