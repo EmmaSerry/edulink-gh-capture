@@ -4,6 +4,19 @@
  * trimmed to just what this smaller, mobile-first app actually uses, so
  * the two apps read as one product even though they're separate
  * deployments.
+ *
+ * LIQUID GLASS PASS (this revision)
+ *   Requested treatment for this app specifically is "liquid glass"
+ *   rather than the web dashboard's glass+neomorphism combo - so this
+ *   file gets the transparency increase and the morph/shimmer motion,
+ *   but NOT carved-in neomorphic inputs (those stay a translucent
+ *   glass pill instead, in keeping with a liquid-glass look). Same two
+ *   changes in spirit as theme.css: (1) --actrs-glass is much more
+ *   transparent than before ("90% will do" - see theme.css's header
+ *   comment for why light mode isn't taken to a literal 10% fill), and
+ *   (2) tiles/surfaces/buttons now transition smoothly and lift/shimmer
+ *   on touch instead of snapping, so switching Day/Night mode and
+ *   tapping a tile both feel like the glass is actually moving.
  */
 :root {
   --actrs-navy: #123363;
@@ -18,9 +31,11 @@
 
   /* Glassmorphism tokens - see theme.css (the cloud dashboard's
      stylesheet) for the full rationale. Same pair here so both apps'
-     "glass" reads the same. */
-  --actrs-glass: rgba(255, 255, 255, 0.62);
-  --actrs-glass-border: rgba(255, 255, 255, 0.5);
+     "glass" reads the same. Transparency raised in this pass - was
+     0.62/0.5. */
+  --actrs-glass: rgba(255, 255, 255, 0.3);
+  --actrs-glass-border: rgba(255, 255, 255, 0.6);
+  --actrs-glass-highlight: rgba(255, 255, 255, 0.9);
 
   --bs-primary: var(--actrs-navy);
   --bs-body-font-family: var(--actrs-font);
@@ -30,17 +45,27 @@
 
 /* Soft blurred colour blobs fixed behind all content - without this,
    the frosted panels below would just look like plain translucent grey,
-   since blurring a flat single-colour background is invisible. */
+   since blurring a flat single-colour background is invisible. A slow
+   breathing animation added in this pass keeps the scene from feeling
+   static now that the glass above it is transparent enough to make the
+   movement visible. */
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -10%;
   z-index: -1;
   background:
     radial-gradient(circle at 15% 15%, rgba(18, 51, 99, 0.3), transparent 42%),
     radial-gradient(circle at 88% 20%, rgba(14, 165, 196, 0.28), transparent 46%),
     radial-gradient(circle at 20% 90%, rgba(14, 165, 196, 0.2), transparent 46%),
     var(--actrs-grey-light);
+  animation: captureBlobBreathe 24s ease-in-out infinite;
+  transition: background 0.6s ease;
+}
+
+@keyframes captureBlobBreathe {
+  0%, 100% { transform: scale(1) translate(0, 0); }
+  50% { transform: scale(1.07) translate(-2%, 1.5%); }
 }
 
 [data-bs-theme="dark"] body::before {
@@ -63,8 +88,9 @@ body::before {
   --actrs-grey-border: #262c35;
   --actrs-text: #e7ebef;
   --actrs-surface: #161d29;
-  --actrs-glass: rgba(22, 29, 41, 0.58);
-  --actrs-glass-border: rgba(255, 255, 255, 0.08);
+  --actrs-glass: rgba(22, 29, 41, 0.14);
+  --actrs-glass-border: rgba(255, 255, 255, 0.16);
+  --actrs-glass-highlight: rgba(255, 255, 255, 0.3);
 }
 
 [data-bs-theme="dark"] .text-primary,
@@ -89,11 +115,13 @@ body {
 
 .actrs-card {
   border: 1px solid var(--actrs-glass-border);
+  border-top-color: var(--actrs-glass-highlight);
   border-radius: var(--actrs-radius);
   box-shadow: var(--actrs-shadow);
   background: var(--actrs-glass);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Theme-aware, frosted replacement for Bootstrap's literal bg-white/
@@ -101,8 +129,9 @@ body {
    fully opaque. Used for the bottom sign-out bar and tab bar. */
 .capture-surface {
   background: var(--actrs-glass);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  transition: background-color 0.5s ease;
 }
 
 /* Bootstrap's precompiled CSS bakes literal colours into .btn-primary /
@@ -133,18 +162,66 @@ body {
   color: var(--actrs-navy) !important;
 }
 
+/* Buttons get a small spring-loaded press to match the web dashboard -
+   a lift on hover, a settle-and-shrink on tap - so the "morph" feel is
+   consistent across both apps, not just the tiles below. */
+.btn {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background-color 0.4s ease, border-color 0.4s ease;
+}
+.btn:active {
+  transform: scale(0.96);
+}
+
+/* Liquid-glass pill inputs - a translucent, fully-rounded field instead
+   of Bootstrap's flat bordered box or the dashboard's carved-in
+   neomorphic treatment (that's deliberately web-only; this app's brief
+   was liquid glass, not neomorphism). */
+.form-control,
+.form-select {
+  background-color: var(--actrs-glass);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid var(--actrs-glass-border);
+  border-radius: 999px;
+  color: var(--actrs-text);
+  transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.3s ease;
+}
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--actrs-glass);
+  color: var(--actrs-text);
+  border-color: var(--actrs-seablue);
+  box-shadow: 0 0 0 3px rgba(14, 165, 196, 0.25);
+}
+.form-control::placeholder {
+  color: var(--actrs-text);
+  opacity: 0.55;
+}
+
 /* Top status strip - a tinted-glass gradient (slightly translucent +
    blurred) rather than a flat fill, matching the cloud dashboard
-   sidebar's same treatment. */
+   sidebar's same treatment. A slow shimmer sweeps the highlight across
+   it, the one place in this app closest to the reference "liquid
+   glass" samples' moving-highlight look. */
 .capture-status-online {
-  background: linear-gradient(90deg, rgba(18, 51, 99, 0.92) 0%, rgba(14, 165, 196, 0.88) 100%);
+  background: linear-gradient(100deg, rgba(18, 51, 99, 0.7) 0%, rgba(14, 165, 196, 0.62) 45%, rgba(255, 255, 255, 0.22) 50%, rgba(14, 165, 196, 0.62) 55%, rgba(18, 51, 99, 0.7) 100%);
+  background-size: 240% 100%;
+  animation: captureShimmer 7s ease-in-out infinite;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  transition: background-color 0.5s ease;
 }
 .capture-status-offline {
-  background: rgba(179, 38, 30, 0.92);
+  background: rgba(179, 38, 30, 0.78);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  transition: background-color 0.5s ease;
+}
+
+@keyframes captureShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Home screen avatar */
@@ -160,32 +237,42 @@ body {
   justify-content: center;
   font-weight: 600;
   font-size: 1.1rem;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .capture-accent-icon {
   color: var(--actrs-seablue);
 }
 
-/* Quick-action tiles on Home */
+/* Quick-action tiles on Home - the app's clearest "liquid glass" moment:
+   translucent, blurred, with a bright top edge like light catching a
+   curved glass surface, and a spring lift + shimmer sweep on touch. */
 .capture-tile {
+  position: relative;
+  overflow: hidden;
   border: 1px solid var(--actrs-glass-border);
+  border-top-color: var(--actrs-glass-highlight);
   border-radius: var(--actrs-radius);
   background: var(--actrs-glass);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
   box-shadow: var(--actrs-shadow);
   padding: 1.1rem 0.5rem;
   text-align: center;
   color: var(--actrs-navy);
   font-size: 0.85rem;
   font-weight: 500;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, background-color 0.5s ease, border-color 0.5s ease;
 }
 .capture-tile:hover,
 .capture-tile:active {
   color: var(--actrs-navy);
-  box-shadow: 0 4px 14px rgba(11, 26, 48, 0.18);
-  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(11, 26, 48, 0.2);
+  transform: translateY(-3px) scale(1.02);
+}
+[data-bs-theme="dark"] .capture-tile:hover,
+[data-bs-theme="dark"] .capture-tile:active {
+  color: var(--actrs-seablue);
 }
 
 /* Bottom tab bar */
@@ -196,6 +283,10 @@ body {
   color: #8a94a0;
   font-size: 0.72rem;
   border-top: 2px solid transparent;
+  transition: color 0.25s ease, border-color 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.capture-tab:active {
+  transform: scale(0.92);
 }
 .capture-tab-active {
   color: var(--actrs-navy);
