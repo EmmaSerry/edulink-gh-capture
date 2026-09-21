@@ -2,6 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { captureDb } from "@/lib/offlineDb";
 import { CaptureService } from "@/services/CaptureService";
 import { KG_GENERAL_COMMENT_BANK } from "@/constants/kgCommentBank";
+import {
+  CONDUCT_COMMENT_BANK,
+  INTEREST_COMMENT_BANK,
+  ATTITUDE_COMMENT_BANK,
+  CLASS_TEACHER_REMARK_BANK,
+  HEADTEACHER_REMARK_BANK,
+} from "@/constants/scoredRemarkCommentBanks";
 import type { TermRow, ClassRow, LevelRow, StudentRow, ReportRecordRow, SchoolRow } from "@/types/database";
 
 function fullNameOf(s: StudentRow): string {
@@ -66,6 +73,48 @@ function SaveButton({ state, onClick }: { state: SaveState; onClick: () => void 
   );
 }
 
+/** A quick-fill dropdown stacked above a free-text input - selecting an
+ *  option copies it into the field below, which stays a normal text
+ *  input the teacher can still edit or overwrite by typing their own
+ *  remark instead. Same pattern KgCard's General comments box already
+ *  used, just reused for every scored-level remark field. */
+function QuickFillField({
+  bank,
+  value,
+  onChange,
+}: {
+  bank: string[];
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  return (
+    <>
+      <select
+        className="form-select form-select-sm mb-1"
+        value=""
+        onChange={(e) => {
+          if (!e.target.value) return;
+          onChange(e.target.value);
+        }}
+      >
+        <option value="">Quick-fill…</option>
+        {bank.map((phrase) => (
+          <option key={phrase} value={phrase}>
+            {phrase}
+          </option>
+        ))}
+      </select>
+      <input
+        type="text"
+        className="form-control form-control-sm"
+        placeholder="Or type your own…"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </>
+  );
+}
+
 function ScoredCard({
   student,
   record,
@@ -83,14 +132,9 @@ function ScoredCard({
     setSaveState("idle");
   }, [record]);
 
-  function field<K extends keyof ScoredDraft>(key: K) {
-    return {
-      value: draft[key],
-      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setDraft((d) => ({ ...d, [key]: e.target.value }));
-        setSaveState("idle");
-      },
-    };
+  function set<K extends keyof ScoredDraft>(key: K, value: string) {
+    setDraft((d) => ({ ...d, [key]: value }));
+    setSaveState("idle");
   }
 
   function handleSave() {
@@ -115,31 +159,43 @@ function ScoredCard({
       <div className="row g-2">
         <div className="col-6">
           <label className="form-label small text-muted mb-1">Days present</label>
-          <input type="number" min={0} className="form-control form-control-sm" {...field("days_present")} />
+          <input
+            type="number"
+            min={0}
+            className="form-control form-control-sm"
+            value={draft.days_present}
+            onChange={(e) => set("days_present", e.target.value)}
+          />
         </div>
         <div className="col-6">
           <label className="form-label small text-muted mb-1">Promoted to</label>
-          <input type="text" className="form-control form-control-sm" placeholder="e.g. Basic 6" {...field("progression")} />
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            placeholder="e.g. Basic 6"
+            value={draft.progression}
+            onChange={(e) => set("progression", e.target.value)}
+          />
         </div>
         <div className="col-12">
           <label className="form-label small text-muted mb-1">Class teacher's remark</label>
-          <input type="text" className="form-control form-control-sm" {...field("class_teacher_remark")} />
+          <QuickFillField bank={CLASS_TEACHER_REMARK_BANK} value={draft.class_teacher_remark} onChange={(v) => set("class_teacher_remark", v)} />
         </div>
         <div className="col-12">
           <label className="form-label small text-muted mb-1">Headteacher's remark</label>
-          <input type="text" className="form-control form-control-sm" {...field("headteacher_remark")} />
+          <QuickFillField bank={HEADTEACHER_REMARK_BANK} value={draft.headteacher_remark} onChange={(v) => set("headteacher_remark", v)} />
         </div>
-        <div className="col-4">
+        <div className="col-12">
           <label className="form-label small text-muted mb-1">Conduct</label>
-          <input type="text" className="form-control form-control-sm" {...field("conduct_remark")} />
+          <QuickFillField bank={CONDUCT_COMMENT_BANK} value={draft.conduct_remark} onChange={(v) => set("conduct_remark", v)} />
         </div>
-        <div className="col-4">
+        <div className="col-12">
           <label className="form-label small text-muted mb-1">Interest</label>
-          <input type="text" className="form-control form-control-sm" {...field("interest_remark")} />
+          <QuickFillField bank={INTEREST_COMMENT_BANK} value={draft.interest_remark} onChange={(v) => set("interest_remark", v)} />
         </div>
-        <div className="col-4">
+        <div className="col-12">
           <label className="form-label small text-muted mb-1">Attitude</label>
-          <input type="text" className="form-control form-control-sm" {...field("attitude_remark")} />
+          <QuickFillField bank={ATTITUDE_COMMENT_BANK} value={draft.attitude_remark} onChange={(v) => set("attitude_remark", v)} />
         </div>
       </div>
       <SaveButton state={saveState} onClick={handleSave} />
@@ -280,7 +336,10 @@ function KgCard({
  * roster/lookup data from the local cache and writing through
  * CaptureService (an instant, always-succeeds local queue write)
  * instead of a live RPC call - one card per student rather than a wide
- * table, since this app is used on a phone.
+ * table, since this app is used on a phone. Every scored-level remark
+ * field now offers the same "quick-fill from a comment bank, or just
+ * type your own" pattern KG's General comments box already had - see
+ * scoredRemarkCommentBanks.ts (kept identical to the cloud app's copy).
  *
  * Same known scope limit as CaptureAssessment: the roster comes from
  * the cached `enrollments` table, so a student registered minutes ago

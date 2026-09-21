@@ -4,6 +4,7 @@ import { useThemeMode } from "@contexts/ThemeContext";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useOutboxStatus } from "@/hooks/useOutboxStatus";
 import { SyncEngine } from "@/services/SyncEngine";
+import { TrainingModeBanner } from "@/components/TrainingModeBanner";
 import {
   IconHome,
   IconPersonPlus,
@@ -37,7 +38,8 @@ const SYNC_NAV_ITEM = { to: "/sync", end: false, label: "Sync", icon: IconSync }
  * Phone-first app shell: a status strip up top (connection state +
  * pending sync count, tappable to force a sync attempt) and a bottom
  * tab bar for the three things a teacher actually does here - register
- * a student, enter assessment data, and check on sync.
+ * a student, enter assessment data, and check on sync. TrainingModeBanner
+ * renders nothing at all for a real school - see that component.
  */
 export function CaptureLayout() {
   const online = useOnlineStatus();
@@ -52,6 +54,7 @@ export function CaptureLayout() {
 
   return (
     <div className="capture-shell d-flex flex-column vh-100">
+      <TrainingModeBanner />
       <header
         className={`d-flex align-items-center justify-content-between px-3 py-2 text-white ${online ? "capture-status-online" : "capture-status-offline"}`}
         onClick={() => void SyncEngine.run()}
