@@ -9,6 +9,16 @@
       name="description"
       content="EduLink GH Capture - offline data capture for schools with no signal, syncing to EduLink GH once online."
     />
+
+    <!-- iOS ignores the web manifest's icons/display settings for "Add
+         to Home Screen" - it needs these explicit tags instead, or the
+         home-screen icon falls back to a screenshot of the page and the
+         app opens inside Safari's chrome instead of full-screen. -->
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="EduLink Capture" />
+
     <title>EduLink GH Capture</title>
   </head>
   <body>

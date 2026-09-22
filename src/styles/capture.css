@@ -23,11 +23,12 @@
   --actrs-glass: rgba(255, 255, 255, 0.62);
   --actrs-glass-border: rgba(255, 255, 255, 0.5);
 
-  /* Neomorphism tokens - see theme.css. Used only by .form-control /
-     .form-select, never by the assessment/skill entry grid cells. */
-  --actrs-neo-base: #eef1f6;
-  --actrs-neo-shadow-dark: rgba(163, 177, 198, 0.55);
-  --actrs-neo-shadow-light: rgba(255, 255, 255, 0.85);
+  /* Liquid-glass input tokens - see theme.css. Used only by
+     .form-control / .form-select, never by the assessment/skill entry
+     grid cells. */
+  --actrs-input-glass: rgba(255, 255, 255, 0.55);
+  --actrs-input-border: rgba(255, 255, 255, 0.65);
+  --actrs-input-highlight: rgba(255, 255, 255, 0.9);
 
   --bs-primary: var(--actrs-navy);
   --bs-body-font-family: var(--actrs-font);
@@ -88,9 +89,9 @@ body::before {
   --actrs-surface: #161d29;
   --actrs-glass: rgba(22, 29, 41, 0.58);
   --actrs-glass-border: rgba(255, 255, 255, 0.08);
-  --actrs-neo-base: #1a212e;
-  --actrs-neo-shadow-dark: rgba(0, 0, 0, 0.5);
-  --actrs-neo-shadow-light: rgba(255, 255, 255, 0.045);
+  --actrs-input-glass: rgba(22, 29, 41, 0.5);
+  --actrs-input-border: rgba(255, 255, 255, 0.12);
+  --actrs-input-highlight: rgba(255, 255, 255, 0.1);
 }
 
 [data-bs-theme="dark"] .text-primary,
@@ -160,25 +161,27 @@ body {
   color: var(--actrs-navy) !important;
 }
 
-/* Neomorphic form inputs - matches the cloud dashboard's theme.css.
+/* Liquid-glass form inputs - matches the cloud dashboard's theme.css.
    Kept off the assessment/skill entry grid cells (those use their own
    plain, borderless class), same reasoning as theme.css. */
 .form-control,
 .form-select {
-  background-color: var(--actrs-neo-base);
-  border: 1px solid transparent;
+  background-color: var(--actrs-input-glass);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  border: 1px solid var(--actrs-input-border);
   border-radius: var(--actrs-radius);
   color: var(--actrs-text);
-  box-shadow: inset 3px 3px 6px var(--actrs-neo-shadow-dark), inset -3px -3px 6px var(--actrs-neo-shadow-light);
-  transition: box-shadow 0.15s ease;
+  box-shadow: inset 0 1px 0 var(--actrs-input-highlight);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .form-control:focus,
 .form-select:focus {
-  background-color: var(--actrs-neo-base);
+  background-color: var(--actrs-input-glass);
   color: var(--actrs-text);
-  box-shadow: inset 2px 2px 4px var(--actrs-neo-shadow-dark), inset -2px -2px 4px var(--actrs-neo-shadow-light),
-    0 0 0 3px rgba(14, 165, 196, 0.25);
+  border-color: var(--actrs-seablue);
+  box-shadow: inset 0 1px 0 var(--actrs-input-highlight), 0 0 0 3px rgba(14, 165, 196, 0.25);
 }
 
 .form-control::placeholder {
