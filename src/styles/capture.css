@@ -4,31 +4,6 @@
  * trimmed to just what this smaller, mobile-first app actually uses, so
  * the two apps read as one product even though they're separate
  * deployments.
- *
- * LIQUID GLASS PASS (this revision)
- *   Requested treatment for this app specifically is "liquid glass"
- *   rather than the web dashboard's glass+neomorphism combo - so this
- *   file gets the transparency increase and the morph/shimmer motion,
- *   but NOT carved-in neomorphic inputs (those stay a translucent
- *   glass pill instead, in keeping with a liquid-glass look). Same two
- *   changes in spirit as theme.css: (1) --actrs-glass is much more
- *   transparent than before ("90% will do" - see theme.css's header
- *   comment for why light mode isn't taken to a literal 10% fill), and
- *   (2) tiles/surfaces/buttons now transition smoothly and lift/shimmer
- *   on touch instead of snapping, so switching Day/Night mode and
- *   tapping a tile both feel like the glass is actually moving.
- *
- * PERFORMANCE PASS (this revision, follow-up)
- *   A real "INP Issue" (slow click response) was reported on the web
- *   dashboard after the pass above - full explanation is in theme.css's
- *   header comment, and the fix is the same idea here: blur radius and
- *   saturate() on every glass surface brought down (still visibly
- *   glass, cheaper to compute), the blob background's movement made
- *   subtler/slower so there's less changing backdrop for every glass
- *   layer to resample each frame, `contain` added to the tiles/cards so
- *   one updating doesn't force a wider layout/paint check, and a
- *   prefers-reduced-motion override that turns all of this off for
- *   anyone whose device asks for reduced motion.
  */
 :root {
   --actrs-navy: #123363;
@@ -36,6 +11,7 @@
   --actrs-grey-light: #f4f6f9;
   --actrs-grey-border: #e1e5ea;
   --actrs-text: #1c2733;
+  --actrs-text-muted: #5b6b7c;
   --actrs-surface: #ffffff;
   --actrs-radius: 0.75rem;
   --actrs-shadow: 0 2px 10px rgba(11, 26, 48, 0.1);
@@ -43,11 +19,15 @@
 
   /* Glassmorphism tokens - see theme.css (the cloud dashboard's
      stylesheet) for the full rationale. Same pair here so both apps'
-     "glass" reads the same. Transparency raised in this pass - was
-     0.62/0.5. */
-  --actrs-glass: rgba(255, 255, 255, 0.3);
-  --actrs-glass-border: rgba(255, 255, 255, 0.6);
-  --actrs-glass-highlight: rgba(255, 255, 255, 0.9);
+     "glass" reads the same. */
+  --actrs-glass: rgba(255, 255, 255, 0.62);
+  --actrs-glass-border: rgba(255, 255, 255, 0.5);
+
+  /* Neomorphism tokens - see theme.css. Used only by .form-control /
+     .form-select, never by the assessment/skill entry grid cells. */
+  --actrs-neo-base: #eef1f6;
+  --actrs-neo-shadow-dark: rgba(163, 177, 198, 0.55);
+  --actrs-neo-shadow-light: rgba(255, 255, 255, 0.85);
 
   --bs-primary: var(--actrs-navy);
   --bs-body-font-family: var(--actrs-font);
@@ -57,28 +37,33 @@
 
 /* Soft blurred colour blobs fixed behind all content - without this,
    the frosted panels below would just look like plain translucent grey,
-   since blurring a flat single-colour background is invisible. Movement
-   kept deliberately subtle/slow (see the performance-pass note above) -
-   every glass panel on screen has to resample this layer each frame it
-   moves. */
+   since blurring a flat single-colour background is invisible. The
+   slow, small "breathe" (1 -> 1.02 scale over 34s) keeps it feeling
+   alive without being fast/large enough to distract on a phone screen
+   or cost battery; will-change promotes it to its own layer up front
+   so the very first interaction on the page isn't what triggers that. */
 body::before {
   content: "";
   position: fixed;
-  inset: -10%;
+  inset: 0;
   z-index: -1;
+  will-change: transform;
+  animation: actrsBlobBreathe 34s ease-in-out infinite;
   background:
     radial-gradient(circle at 15% 15%, rgba(18, 51, 99, 0.3), transparent 42%),
     radial-gradient(circle at 88% 20%, rgba(14, 165, 196, 0.28), transparent 46%),
     radial-gradient(circle at 20% 90%, rgba(14, 165, 196, 0.2), transparent 46%),
     var(--actrs-grey-light);
-  animation: captureBlobBreathe 32s ease-in-out infinite;
-  will-change: transform;
-  transition: background 0.6s ease;
 }
 
-@keyframes captureBlobBreathe {
-  0%, 100% { transform: scale(1) translate(0, 0); }
-  50% { transform: scale(1.02) translate(-0.8%, 0.8%); }
+@keyframes actrsBlobBreathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
 }
 
 [data-bs-theme="dark"] body::before {
@@ -87,31 +72,6 @@ body::before {
     radial-gradient(circle at 88% 20%, rgba(14, 165, 196, 0.22), transparent 46%),
     radial-gradient(circle at 20% 90%, rgba(14, 165, 196, 0.14), transparent 46%),
     var(--actrs-grey-light);
-}
-
-/* Anyone whose OS/browser has "reduce motion" turned on gets a fully
-   static, non-transitioning UI - a real accessibility courtesy and a
-   free performance win on exactly the lower-powered phones where this
-   kind of jank is worst. */
-@media (prefers-reduced-motion: reduce) {
-  body::before {
-    animation: none;
-  }
-  .actrs-card,
-  .capture-surface,
-  .capture-tile,
-  .capture-tile:hover,
-  .capture-tile:active,
-  .capture-avatar,
-  .capture-status-online,
-  .capture-tab,
-  .btn,
-  .form-control,
-  .form-select {
-    transition: none !important;
-    animation: none !important;
-    transform: none !important;
-  }
 }
 
 /* Same dark-mode token values as the cloud dashboard's theme.css, so
@@ -126,9 +86,11 @@ body::before {
   --actrs-grey-border: #262c35;
   --actrs-text: #e7ebef;
   --actrs-surface: #161d29;
-  --actrs-glass: rgba(22, 29, 41, 0.14);
-  --actrs-glass-border: rgba(255, 255, 255, 0.16);
-  --actrs-glass-highlight: rgba(255, 255, 255, 0.3);
+  --actrs-glass: rgba(22, 29, 41, 0.58);
+  --actrs-glass-border: rgba(255, 255, 255, 0.08);
+  --actrs-neo-base: #1a212e;
+  --actrs-neo-shadow-dark: rgba(0, 0, 0, 0.5);
+  --actrs-neo-shadow-light: rgba(255, 255, 255, 0.045);
 }
 
 [data-bs-theme="dark"] .text-primary,
@@ -153,14 +115,12 @@ body {
 
 .actrs-card {
   border: 1px solid var(--actrs-glass-border);
-  border-top-color: var(--actrs-glass-highlight);
   border-radius: var(--actrs-radius);
   box-shadow: var(--actrs-shadow);
   background: var(--actrs-glass);
   backdrop-filter: blur(12px) saturate(130%);
   -webkit-backdrop-filter: blur(12px) saturate(130%);
   contain: layout paint style;
-  transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Theme-aware, frosted replacement for Bootstrap's literal bg-white/
@@ -170,7 +130,6 @@ body {
   background: var(--actrs-glass);
   backdrop-filter: blur(12px) saturate(130%);
   -webkit-backdrop-filter: blur(12px) saturate(130%);
-  transition: background-color 0.5s ease;
 }
 
 /* Bootstrap's precompiled CSS bakes literal colours into .btn-primary /
@@ -201,71 +160,44 @@ body {
   color: var(--actrs-navy) !important;
 }
 
-/* Buttons get a small spring-loaded press to match the web dashboard -
-   a lift on hover, a settle-and-shrink on tap - so the "morph" feel is
-   consistent across both apps, not just the tiles below. Transform/
-   colour transitions only, no backdrop-filter involved, so this stays
-   cheap regardless of the glass-performance notes above. */
-.btn {
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background-color 0.4s ease, border-color 0.4s ease;
-}
-.btn:active {
-  transform: scale(0.96);
-}
-
-/* Liquid-glass pill inputs - a translucent, fully-rounded field instead
-   of Bootstrap's flat bordered box or the dashboard's carved-in
-   neomorphic treatment (that's deliberately web-only; this app's brief
-   was liquid glass, not neomorphism). Blur kept light since these can
-   appear several-to-a-screen on the Register/Assessment forms. */
+/* Neomorphic form inputs - matches the cloud dashboard's theme.css.
+   Kept off the assessment/skill entry grid cells (those use their own
+   plain, borderless class), same reasoning as theme.css. */
 .form-control,
 .form-select {
-  background-color: var(--actrs-glass);
-  backdrop-filter: blur(8px) saturate(120%);
-  -webkit-backdrop-filter: blur(8px) saturate(120%);
-  border: 1px solid var(--actrs-glass-border);
-  border-radius: 999px;
+  background-color: var(--actrs-neo-base);
+  border: 1px solid transparent;
+  border-radius: var(--actrs-radius);
   color: var(--actrs-text);
-  transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.3s ease;
+  box-shadow: inset 3px 3px 6px var(--actrs-neo-shadow-dark), inset -3px -3px 6px var(--actrs-neo-shadow-light);
+  transition: box-shadow 0.15s ease;
 }
+
 .form-control:focus,
 .form-select:focus {
-  background-color: var(--actrs-glass);
+  background-color: var(--actrs-neo-base);
   color: var(--actrs-text);
-  border-color: var(--actrs-seablue);
-  box-shadow: 0 0 0 3px rgba(14, 165, 196, 0.25);
+  box-shadow: inset 2px 2px 4px var(--actrs-neo-shadow-dark), inset -2px -2px 4px var(--actrs-neo-shadow-light),
+    0 0 0 3px rgba(14, 165, 196, 0.25);
 }
+
 .form-control::placeholder {
-  color: var(--actrs-text);
-  opacity: 0.55;
+  color: var(--actrs-text-muted);
+  opacity: 0.8;
 }
 
 /* Top status strip - a tinted-glass gradient (slightly translucent +
    blurred) rather than a flat fill, matching the cloud dashboard
-   sidebar's same treatment. A slow shimmer sweeps the highlight across
-   it, the one place in this app closest to the reference "liquid
-   glass" samples' moving-highlight look - this is a background-position
-   animation on a gradient, not an animated backdrop-filter, so it's
-   cheap even though it's constantly moving. */
+   sidebar's same treatment. */
 .capture-status-online {
-  background: linear-gradient(100deg, rgba(18, 51, 99, 0.7) 0%, rgba(14, 165, 196, 0.62) 45%, rgba(255, 255, 255, 0.22) 50%, rgba(14, 165, 196, 0.62) 55%, rgba(18, 51, 99, 0.7) 100%);
-  background-size: 240% 100%;
-  animation: captureShimmer 7s ease-in-out infinite;
+  background: linear-gradient(90deg, rgba(18, 51, 99, 0.92) 0%, rgba(14, 165, 196, 0.88) 100%);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  transition: background-color 0.5s ease;
 }
 .capture-status-offline {
-  background: rgba(179, 38, 30, 0.78);
+  background: rgba(179, 38, 30, 0.92);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  transition: background-color 0.5s ease;
-}
-
-@keyframes captureShimmer {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }
 
 /* Home screen avatar */
@@ -281,23 +213,15 @@ body {
   justify-content: center;
   font-weight: 600;
   font-size: 1.1rem;
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .capture-accent-icon {
   color: var(--actrs-seablue);
 }
 
-/* Quick-action tiles on Home - the app's clearest "liquid glass" moment:
-   translucent, blurred, with a bright top edge like light catching a
-   curved glass surface, and a spring lift + shimmer sweep on touch.
-   `contain` limits a tap's re-render to the tile itself instead of
-   forcing the browser to re-check the whole 2x2 grid around it. */
+/* Quick-action tiles on Home */
 .capture-tile {
-  position: relative;
-  overflow: hidden;
   border: 1px solid var(--actrs-glass-border);
-  border-top-color: var(--actrs-glass-highlight);
   border-radius: var(--actrs-radius);
   background: var(--actrs-glass);
   backdrop-filter: blur(12px) saturate(130%);
@@ -308,18 +232,13 @@ body {
   color: var(--actrs-navy);
   font-size: 0.85rem;
   font-weight: 500;
-  contain: layout paint style;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, background-color 0.5s ease, border-color 0.5s ease;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 .capture-tile:hover,
 .capture-tile:active {
   color: var(--actrs-navy);
-  box-shadow: 0 10px 22px rgba(11, 26, 48, 0.2);
-  transform: translateY(-3px) scale(1.02);
-}
-[data-bs-theme="dark"] .capture-tile:hover,
-[data-bs-theme="dark"] .capture-tile:active {
-  color: var(--actrs-seablue);
+  box-shadow: 0 4px 14px rgba(11, 26, 48, 0.18);
+  transform: translateY(-1px);
 }
 
 /* Bottom tab bar */
@@ -330,10 +249,6 @@ body {
   color: #8a94a0;
   font-size: 0.72rem;
   border-top: 2px solid transparent;
-  transition: color 0.25s ease, border-color 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.capture-tab:active {
-  transform: scale(0.92);
 }
 .capture-tab-active {
   color: var(--actrs-navy);
@@ -359,4 +274,16 @@ body {
   border-radius: 999px;
   background: var(--actrs-seablue);
   transition: width 0.3s ease;
+}
+
+/* Respect the OS "reduce motion" setting. */
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none !important;
+  }
+  .form-control,
+  .form-select,
+  .capture-tile {
+    transition: none !important;
+  }
 }
