@@ -11,7 +11,6 @@
   --actrs-grey-light: #f4f6f9;
   --actrs-grey-border: #e1e5ea;
   --actrs-text: #1c2733;
-  --actrs-text-muted: #5b6b7c;
   --actrs-surface: #ffffff;
   --actrs-radius: 0.75rem;
   --actrs-shadow: 0 2px 10px rgba(11, 26, 48, 0.1);
@@ -23,13 +22,6 @@
   --actrs-glass: rgba(255, 255, 255, 0.62);
   --actrs-glass-border: rgba(255, 255, 255, 0.5);
 
-  /* Liquid-glass input tokens - see theme.css. Used only by
-     .form-control / .form-select, never by the assessment/skill entry
-     grid cells. */
-  --actrs-input-glass: rgba(255, 255, 255, 0.55);
-  --actrs-input-border: rgba(255, 255, 255, 0.65);
-  --actrs-input-highlight: rgba(255, 255, 255, 0.9);
-
   --bs-primary: var(--actrs-navy);
   --bs-body-font-family: var(--actrs-font);
   --bs-body-color: var(--actrs-text);
@@ -38,33 +30,17 @@
 
 /* Soft blurred colour blobs fixed behind all content - without this,
    the frosted panels below would just look like plain translucent grey,
-   since blurring a flat single-colour background is invisible. The
-   slow, small "breathe" (1 -> 1.02 scale over 34s) keeps it feeling
-   alive without being fast/large enough to distract on a phone screen
-   or cost battery; will-change promotes it to its own layer up front
-   so the very first interaction on the page isn't what triggers that. */
+   since blurring a flat single-colour background is invisible. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
-  will-change: transform;
-  animation: actrsBlobBreathe 34s ease-in-out infinite;
   background:
     radial-gradient(circle at 15% 15%, rgba(18, 51, 99, 0.3), transparent 42%),
     radial-gradient(circle at 88% 20%, rgba(14, 165, 196, 0.28), transparent 46%),
     radial-gradient(circle at 20% 90%, rgba(14, 165, 196, 0.2), transparent 46%),
     var(--actrs-grey-light);
-}
-
-@keyframes actrsBlobBreathe {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.02);
-  }
 }
 
 [data-bs-theme="dark"] body::before {
@@ -89,9 +65,6 @@ body::before {
   --actrs-surface: #161d29;
   --actrs-glass: rgba(22, 29, 41, 0.58);
   --actrs-glass-border: rgba(255, 255, 255, 0.08);
-  --actrs-input-glass: rgba(22, 29, 41, 0.5);
-  --actrs-input-border: rgba(255, 255, 255, 0.12);
-  --actrs-input-highlight: rgba(255, 255, 255, 0.1);
 }
 
 [data-bs-theme="dark"] .text-primary,
@@ -117,11 +90,32 @@ body {
 .actrs-card {
   border: 1px solid var(--actrs-glass-border);
   border-radius: var(--actrs-radius);
-  box-shadow: var(--actrs-shadow);
+  box-shadow: var(--actrs-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   background: var(--actrs-glass);
-  backdrop-filter: blur(12px) saturate(130%);
-  -webkit-backdrop-filter: blur(12px) saturate(130%);
-  contain: layout paint style;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+[data-bs-theme="dark"] .actrs-card {
+  box-shadow: var(--actrs-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* A card or row explicitly marked clickable gets the same lift-and-glow
+   on hover/tap that the quick-action tiles below already had, so every
+   "this opens something" surface in the app behaves consistently. */
+.actrs-card[role="button"],
+tr[role="button"] {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.actrs-card[role="button"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(11, 26, 48, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.actrs-card[role="button"]:active {
+  transform: translateY(0);
 }
 
 /* Theme-aware, frosted replacement for Bootstrap's literal bg-white/
@@ -129,8 +123,8 @@ body {
    fully opaque. Used for the bottom sign-out bar and tab bar. */
 .capture-surface {
   background: var(--actrs-glass);
-  backdrop-filter: blur(12px) saturate(130%);
-  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
 }
 
 /* Bootstrap's precompiled CSS bakes literal colours into .btn-primary /
@@ -161,32 +155,30 @@ body {
   color: var(--actrs-navy) !important;
 }
 
-/* Liquid-glass form inputs - matches the cloud dashboard's theme.css.
-   Kept off the assessment/skill entry grid cells (those use their own
-   plain, borderless class), same reasoning as theme.css. */
-.form-control,
-.form-select {
-  background-color: var(--actrs-input-glass);
-  backdrop-filter: blur(8px) saturate(140%);
-  -webkit-backdrop-filter: blur(8px) saturate(140%);
-  border: 1px solid var(--actrs-input-border);
-  border-radius: var(--actrs-radius);
-  color: var(--actrs-text);
-  box-shadow: inset 0 1px 0 var(--actrs-input-highlight);
-  transition: box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+/* Every button gets a lift-and-glow on hover and a quick settle-down on
+   click - same treatment as the cloud dashboard's theme.css, so the two
+   apps feel like the same product. Colours are untouched; this only
+   adds motion and shadow on top of each variant's own hover colour set
+   above/from Bootstrap. */
+.btn:not(.btn-link) {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease;
 }
 
-.form-control:focus,
-.form-select:focus {
-  background-color: var(--actrs-input-glass);
-  color: var(--actrs-text);
-  border-color: var(--actrs-seablue);
-  box-shadow: inset 0 1px 0 var(--actrs-input-highlight), 0 0 0 3px rgba(14, 165, 196, 0.25);
+.btn:not(.btn-link):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(11, 26, 48, 0.2);
 }
 
-.form-control::placeholder {
-  color: var(--actrs-text-muted);
-  opacity: 0.8;
+.btn:not(.btn-link):active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(11, 26, 48, 0.15);
+}
+
+.btn:not(.btn-link):disabled,
+.btn:not(.btn-link).disabled {
+  transform: none;
+  box-shadow: none;
 }
 
 /* Top status strip - a tinted-glass gradient (slightly translucent +
@@ -194,13 +186,13 @@ body {
    sidebar's same treatment. */
 .capture-status-online {
   background: linear-gradient(90deg, rgba(18, 51, 99, 0.92) 0%, rgba(14, 165, 196, 0.88) 100%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .capture-status-offline {
   background: rgba(179, 38, 30, 0.92);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* Home screen avatar */
@@ -227,8 +219,8 @@ body {
   border: 1px solid var(--actrs-glass-border);
   border-radius: var(--actrs-radius);
   background: var(--actrs-glass);
-  backdrop-filter: blur(12px) saturate(130%);
-  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
   box-shadow: var(--actrs-shadow);
   padding: 1.1rem 0.5rem;
   text-align: center;
@@ -252,6 +244,10 @@ body {
   color: #8a94a0;
   font-size: 0.72rem;
   border-top: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.capture-tab:hover {
+  color: var(--actrs-seablue);
 }
 .capture-tab-active {
   color: var(--actrs-navy);
@@ -260,6 +256,20 @@ body {
 }
 .capture-tab-label {
   display: block;
+}
+
+/* Table rows - same accent-tinted hover as the cloud dashboard, and a
+   pointer cursor on any row explicitly marked clickable. */
+.table-hover > tbody > tr {
+  transition: background-color 0.15s ease;
+}
+
+.table-hover > tbody > tr:hover > * {
+  background-color: rgba(14, 165, 196, 0.1);
+}
+
+[data-bs-theme="dark"] .table-hover > tbody > tr:hover > * {
+  background-color: rgba(14, 165, 196, 0.14);
 }
 
 /* Progress bars on the offline Progress/Analytics screen */
@@ -279,14 +289,20 @@ body {
   transition: width 0.3s ease;
 }
 
-/* Respect the OS "reduce motion" setting. */
+/* Respect the OS/browser "reduce motion" setting - see theme.css for
+   the same treatment on the cloud dashboard. */
 @media (prefers-reduced-motion: reduce) {
-  body::before {
-    animation: none !important;
-  }
-  .form-control,
-  .form-select,
-  .capture-tile {
+  .actrs-card[role="button"],
+  tr[role="button"],
+  .btn:not(.btn-link),
+  .capture-tile,
+  .capture-tab,
+  .table-hover > tbody > tr {
     transition: none !important;
+  }
+  .actrs-card[role="button"]:hover,
+  .btn:not(.btn-link):hover,
+  .capture-tile:hover {
+    transform: none !important;
   }
 }
