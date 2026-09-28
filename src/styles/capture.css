@@ -22,6 +22,12 @@
   --actrs-glass: rgba(255, 255, 255, 0.62);
   --actrs-glass-border: rgba(255, 255, 255, 0.5);
 
+  /* Same three-colour hover/focus halo as theme.css - see that file for
+     why this is three plain box-shadows instead of a literal gradient
+     border. */
+  --actrs-glow-ring: 0 0 0 1px rgba(18, 51, 99, 0.4), 0 0 16px 2px rgba(14, 165, 196, 0.4),
+    0 0 26px 6px rgba(14, 165, 196, 0.18);
+
   --bs-primary: var(--actrs-navy);
   --bs-body-font-family: var(--actrs-font);
   --bs-body-color: var(--actrs-text);
@@ -111,7 +117,7 @@ tr[role="button"] {
 
 .actrs-card[role="button"]:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(11, 26, 48, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 20px rgba(11, 26, 48, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.25), var(--actrs-glow-ring);
 }
 
 .actrs-card[role="button"]:active {
@@ -165,9 +171,11 @@ tr[role="button"] {
     color 0.15s ease;
 }
 
-.btn:not(.btn-link):hover {
+.btn:not(.btn-link):hover,
+.btn:not(.btn-link):focus-visible {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(11, 26, 48, 0.2);
+  box-shadow: 0 6px 16px rgba(11, 26, 48, 0.2), var(--actrs-glow-ring);
+  outline: none;
 }
 
 .btn:not(.btn-link):active {
@@ -289,6 +297,40 @@ tr[role="button"] {
   transition: width 0.3s ease;
 }
 
+/* Auth hero background - see theme.css for the full rationale (a
+   CSS-only, compositor-only stand-in for a flashier animated
+   background on the sign-in screen, deliberately not WebGL/canvas). */
+.actrs-auth-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.actrs-auth-hero::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 55% 10% at 20% 35%, rgba(14, 165, 196, 0.3), transparent 70%),
+    radial-gradient(ellipse 55% 10% at 65% 55%, rgba(18, 51, 99, 0.35), transparent 70%),
+    radial-gradient(ellipse 55% 10% at 40% 75%, rgba(14, 165, 196, 0.2), transparent 70%);
+  filter: blur(6px);
+  animation: actrsAuroraDrift 20s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes actrsAuroraDrift {
+  0% {
+    transform: translate3d(-4%, -2%, 0) rotate(-2deg) scaleX(1);
+  }
+  50% {
+    transform: translate3d(3%, 2%, 0) rotate(1deg) scaleX(1.06);
+  }
+  100% {
+    transform: translate3d(-2%, 3%, 0) rotate(-1deg) scaleX(0.98);
+  }
+}
+
 /* Respect the OS/browser "reduce motion" setting - see theme.css for
    the same treatment on the cloud dashboard. */
 @media (prefers-reduced-motion: reduce) {
@@ -297,8 +339,10 @@ tr[role="button"] {
   .btn:not(.btn-link),
   .capture-tile,
   .capture-tab,
-  .table-hover > tbody > tr {
+  .table-hover > tbody > tr,
+  .actrs-auth-hero::after {
     transition: none !important;
+    animation: none !important;
   }
   .actrs-card[role="button"]:hover,
   .btn:not(.btn-link):hover,

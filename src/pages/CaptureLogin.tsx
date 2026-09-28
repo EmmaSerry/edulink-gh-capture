@@ -31,8 +31,8 @@ export function CaptureLogin() {
   }
 
   return (
-    <div className="d-flex flex-column align-items-center justify-content-center vh-100 p-4">
-      <div className="w-100" style={{ maxWidth: 380 }}>
+    <div className="actrs-auth-hero d-flex flex-column align-items-center justify-content-center vh-100 p-4">
+      <div className="w-100" style={{ maxWidth: 380, position: "relative", zIndex: 1 }}>
         <div className="text-center mb-4">
           <h1 className="h4 mb-1">EduLink GH Capture</h1>
           <p className="text-muted small mb-0">Offline data capture for schools with no signal</p>
