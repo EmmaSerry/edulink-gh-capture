@@ -1,10 +1,11 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useCaptureAuth } from "@contexts/CaptureAuthContext";
 import { useThemeMode } from "@contexts/ThemeContext";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useOutboxStatus } from "@/hooks/useOutboxStatus";
 import { SyncEngine } from "@/services/SyncEngine";
 import { TrainingModeBanner } from "@/components/TrainingModeBanner";
+import { CaptureBackdrop } from "@/components/CaptureBackdrop";
 import {
   IconHome,
   IconPersonPlus,
@@ -21,7 +22,7 @@ import {
 // Same role set as CaptureFees.tsx / the cloud app's RequireAdmin
 // roles="fees" - kept as its own small copy here (not imported) since
 // it's only ever this one boolean check in each place.
-const FEE_MANAGER_ROLES = new Set(["bursar", "school_admin", "district_admin", "platform_admin"]);
+const FEE_MANAGER_ROLES = new Set(["bursar", "school_admin", "platform_admin"]);
 
 const BASE_NAV_ITEMS = [
   { to: "/", end: true, label: "Home", icon: IconHome },
@@ -46,6 +47,7 @@ export function CaptureLayout() {
   const { pending, failed, syncing } = useOutboxStatus();
   const { profile, signOut } = useCaptureAuth();
   const { mode, toggle } = useThemeMode();
+  const location = useLocation();
   const navItems = [
     ...BASE_NAV_ITEMS,
     ...(profile && FEE_MANAGER_ROLES.has(profile.role) ? [FEES_NAV_ITEM] : []),
@@ -54,6 +56,7 @@ export function CaptureLayout() {
 
   return (
     <div className="capture-shell d-flex flex-column vh-100">
+      <CaptureBackdrop />
       <TrainingModeBanner />
       <header
         className={`d-flex align-items-center justify-content-between px-3 py-2 text-white ${online ? "capture-status-online" : "capture-status-offline"}`}
@@ -76,7 +79,9 @@ export function CaptureLayout() {
       </header>
 
       <main className="flex-grow-1 overflow-auto p-3">
-        <Outlet />
+        <div key={location.pathname} className="capture-page">
+          <Outlet />
+        </div>
       </main>
 
       <div className="d-flex align-items-center justify-content-center gap-3 py-1 border-top capture-surface">

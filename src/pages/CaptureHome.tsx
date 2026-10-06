@@ -6,10 +6,12 @@ import { useOutboxStatus } from "@/hooks/useOutboxStatus";
 import { LookupSyncService } from "@/services/LookupSyncService";
 import { SyncEngine } from "@/services/SyncEngine";
 import { getLastLookupSyncAt, captureDb } from "@/lib/offlineDb";
+import { CaptureCountUp } from "@/components/CaptureCountUp";
 import { IconPersonPlus, IconClipboardCheck, IconNotebook, IconCash, IconChart, IconSync } from "@/components/CaptureIcons";
 
-// Same role set as CaptureLayout.tsx / CaptureFees.tsx.
-const FEE_MANAGER_ROLES = new Set(["bursar", "school_admin", "district_admin", "platform_admin"]);
+// Same role set as CaptureLayout.tsx / CaptureFees.tsx. District
+// administrators have no access to finances.
+const FEE_MANAGER_ROLES = new Set(["bursar", "school_admin", "platform_admin"]);
 import type { TermRow } from "@/types/database";
 
 function formatWhen(iso: string | null): string {
@@ -61,7 +63,7 @@ export function CaptureHome() {
       <div className="d-flex align-items-center gap-3 mb-4">
         <div className="capture-avatar">{initial}</div>
         <div>
-          <h1 className="h4 mb-0">Hi, {profile?.full_name?.split(" ")[0] ?? "there"}</h1>
+          <h1 className="h4 mb-0 capture-hello">Hi, {profile?.full_name?.split(" ")[0] ?? "there"}</h1>
           <p className="text-muted small mb-0">{term ? term.term_name : "No active term cached yet"}</p>
         </div>
       </div>
@@ -73,7 +75,9 @@ export function CaptureHome() {
         </div>
         <div className="d-flex justify-content-between small mb-3">
           <span className="text-muted">Students cached for offline use</span>
-          <span className="fw-medium">{studentCount ?? "…"}</span>
+          <span className="fw-medium">
+            {studentCount === null ? "…" : <CaptureCountUp value={studentCount} />}
+          </span>
         </div>
         {refreshError && <div className="alert alert-danger small py-2 mb-2">{refreshError}</div>}
         <button className="btn btn-outline-primary btn-sm w-100" onClick={handleRefresh} disabled={!online || refreshing}>
@@ -85,10 +89,12 @@ export function CaptureHome() {
       <div className="actrs-card p-3 mb-3">
         <div className="d-flex justify-content-between align-items-center mb-2">
           <span className="small text-muted d-flex align-items-center gap-2">
-            <IconSync size={16} className="capture-accent-icon" />
+            <IconSync size={16} className={`capture-accent-icon ${syncing ? "capture-spin" : ""}`} />
             Pending items to sync
           </span>
-          <span className="fw-semibold">{pending}</span>
+          <span className="fw-semibold">
+            <CaptureCountUp value={pending} />
+          </span>
         </div>
         {failed > 0 && (
           <div className="d-flex justify-content-between align-items-center mb-2 text-danger">

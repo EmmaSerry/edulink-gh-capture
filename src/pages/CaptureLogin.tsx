@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useCaptureAuth } from "@contexts/CaptureAuthContext";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { CaptureBackdrop } from "@/components/CaptureBackdrop";
 
 export function CaptureLogin() {
   const { session, signIn } = useCaptureAuth();
@@ -11,6 +12,7 @@ export function CaptureLogin() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [logoOk, setLogoOk] = useState(true);
 
   if (session) {
     const from = (location.state as { from?: Location })?.from?.pathname ?? "/";
@@ -31,10 +33,12 @@ export function CaptureLogin() {
   }
 
   return (
-    <div className="actrs-auth-hero d-flex flex-column align-items-center justify-content-center vh-100 p-4">
-      <div className="w-100" style={{ maxWidth: 380, position: "relative", zIndex: 1 }}>
-        <div className="text-center mb-4">
-          <h1 className="h4 mb-1">EduLink GH Capture</h1>
+    <div className="d-flex flex-column align-items-center justify-content-center vh-100 p-4">
+      <CaptureBackdrop />
+      <div className="w-100" style={{ maxWidth: 380 }}>
+        <div className="capture-login-hero">
+          {logoOk && <img src="/edulink-logo.png" alt="EduLink GH" onError={() => setLogoOk(false)} className="mb-2" />}
+          <h1 className="h4 mb-1 capture-login-title">EduLink GH Capture</h1>
           <p className="text-muted small mb-0">Offline data capture for schools with no signal</p>
         </div>
 
@@ -51,7 +55,7 @@ export function CaptureLogin() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="actrs-card p-4">
+        <form onSubmit={handleSubmit} className="actrs-card capture-login-card p-4">
           <div className="mb-3">
             <label className="form-label small">Email</label>
             <input

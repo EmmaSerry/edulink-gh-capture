@@ -1,0 +1,343 @@
+/* ==========================================================================
+   EduLink GH Capture - "splash" layer.
+   Loaded AFTER capture.css and only adds / overrides. Everything animates
+   with transform + opacity (cheap on phones) and switches off for people
+   who prefer reduced motion.
+   ========================================================================== */
+
+:root {
+  --cap-violet: #7c5cff;
+  --cap-gold: #ffb627;
+  --cap-pink: #ff5fa2;
+  --cap-green: #1fd3a1;
+  --cap-grad: linear-gradient(135deg, #123363 0%, #0b7fa8 55%, #0ea5c4 100%);
+  --cap-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---- Living background ------------------------------------------------- */
+body::before {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(124, 92, 255, 0.28), transparent 40%),
+    radial-gradient(circle at 92% 16%, rgba(14, 165, 196, 0.34), transparent 44%),
+    radial-gradient(circle at 80% 92%, rgba(255, 182, 39, 0.2), transparent 42%),
+    radial-gradient(circle at 10% 88%, rgba(31, 211, 161, 0.2), transparent 44%),
+    var(--actrs-grey-light) !important;
+}
+[data-bs-theme="dark"] body::before {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(124, 92, 255, 0.34), transparent 42%),
+    radial-gradient(circle at 92% 16%, rgba(14, 165, 196, 0.3), transparent 46%),
+    radial-gradient(circle at 80% 92%, rgba(255, 182, 39, 0.14), transparent 42%),
+    radial-gradient(circle at 10% 88%, rgba(31, 211, 161, 0.14), transparent 44%),
+    #0b1020 !important;
+}
+
+.capture-orbs {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.capture-orbs span {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+  opacity: 0.55;
+}
+.capture-orbs span:nth-child(1) {
+  width: 300px; height: 300px; left: -90px; top: 8%;
+  background: radial-gradient(circle at 35% 35%, rgba(124, 92, 255, 0.55), transparent 68%);
+  animation: cap-float-a 16s ease-in-out infinite alternate;
+}
+.capture-orbs span:nth-child(2) {
+  width: 340px; height: 340px; right: -120px; top: 38%;
+  background: radial-gradient(circle at 40% 40%, rgba(14, 165, 196, 0.6), transparent 68%);
+  animation: cap-float-b 19s ease-in-out infinite alternate;
+}
+.capture-orbs span:nth-child(3) {
+  width: 260px; height: 260px; left: 20%; bottom: -80px;
+  background: radial-gradient(circle at 40% 40%, rgba(255, 182, 39, 0.45), transparent 68%);
+  animation: cap-float-c 14s ease-in-out infinite alternate;
+}
+.capture-orbs span:nth-child(4) {
+  width: 180px; height: 180px; right: 12%; top: -50px;
+  background: radial-gradient(circle at 40% 40%, rgba(255, 95, 162, 0.4), transparent 68%);
+  animation: cap-float-a 21s ease-in-out infinite alternate-reverse;
+}
+@keyframes cap-float-a { to { transform: translate(70px, 90px) scale(1.15); } }
+@keyframes cap-float-b { to { transform: translate(-80px, -70px) scale(1.2); } }
+@keyframes cap-float-c { to { transform: translate(90px, -60px) scale(0.9); } }
+
+/* ---- Entrances ---------------------------------------------------------- */
+@keyframes cap-rise {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes cap-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.capture-page { animation: cap-rise 0.45s var(--cap-ease) both; }
+.actrs-card { animation: cap-rise 0.55s var(--cap-ease) both; position: relative; }
+.capture-page > .actrs-card:nth-of-type(2) { animation-delay: 0.08s; }
+.capture-page > .actrs-card:nth-of-type(3) { animation-delay: 0.16s; }
+.alert { animation: cap-rise 0.4s var(--cap-ease) both; }
+.alert-success { box-shadow: 0 0 0 1px rgba(31, 211, 161, 0.35), 0 6px 22px rgba(31, 211, 161, 0.25); }
+
+/* Cards: glowing top edge + soft lift */
+.actrs-card::before {
+  content: "";
+  position: absolute;
+  left: 14px; right: 14px; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+  opacity: 0.8;
+  pointer-events: none;
+}
+.actrs-card { box-shadow: 0 8px 28px rgba(18, 51, 99, 0.16), 0 1px 0 rgba(255, 255, 255, 0.4) inset; }
+
+/* ---- Status strip: shimmer + live dot ---------------------------------- */
+.capture-status-online, .capture-status-offline { position: relative; overflow: hidden; }
+.capture-status-online::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 -40%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  animation: cap-sheen 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes cap-sheen { 0% { transform: translateX(0); } 60%, 100% { transform: translateX(420%); } }
+.capture-status-online svg { animation: cap-pulse-soft 2.4s ease-in-out infinite; }
+.capture-status-offline svg { animation: cap-blink 1.4s ease-in-out infinite; }
+@keyframes cap-pulse-soft { 50% { transform: scale(1.18); filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9)); } }
+@keyframes cap-blink { 50% { opacity: 0.35; } }
+
+/* ---- Avatar with spinning colour ring ---------------------------------- */
+.capture-avatar { position: relative; z-index: 0; box-shadow: 0 0 18px rgba(14, 165, 196, 0.55); }
+.capture-avatar::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--cap-violet), var(--actrs-seablue), var(--cap-gold), var(--cap-pink), var(--cap-violet));
+  z-index: -2;
+  animation: cap-spin 5s linear infinite;
+}
+.capture-avatar::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--actrs-navy), var(--actrs-seablue));
+  z-index: -1;
+}
+@keyframes cap-spin { to { transform: rotate(360deg); } }
+.capture-spin { animation: cap-spin 1s linear infinite; }
+
+/* Greeting */
+.capture-hello {
+  background: linear-gradient(90deg, var(--actrs-navy), var(--actrs-seablue), var(--cap-violet), var(--actrs-seablue));
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: cap-gradient-slide 6s linear infinite;
+  font-weight: 800;
+}
+[data-bs-theme="dark"] .capture-hello {
+  background-image: linear-gradient(90deg, #fff, var(--actrs-seablue), var(--cap-gold), var(--actrs-seablue));
+  background-size: 250% 100%;
+}
+@keyframes cap-gradient-slide { to { background-position: 250% 0; } }
+
+/* ---- Buttons ------------------------------------------------------------ */
+.btn { transition: transform 0.15s var(--cap-ease), box-shadow 0.2s ease; position: relative; overflow: hidden; }
+.btn:active { transform: scale(0.96); }
+.btn-primary {
+  --bs-btn-bg: transparent;
+  background-image: var(--cap-grad);
+  border: 0;
+  box-shadow: 0 6px 18px rgba(14, 165, 196, 0.38);
+}
+.btn-primary:hover, .btn-primary:focus-visible {
+  background-image: linear-gradient(135deg, #123363 0%, #0e92b8 55%, #1fd3a1 100%);
+  box-shadow: 0 8px 26px rgba(14, 165, 196, 0.55);
+}
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 -60%;
+  width: 50%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: skewX(-20deg);
+  animation: cap-sheen 5s ease-in-out infinite;
+  pointer-events: none;
+}
+.btn-outline-primary { box-shadow: 0 0 0 0 rgba(14, 165, 196, 0); }
+.btn-outline-primary:hover { box-shadow: 0 6px 18px rgba(18, 51, 99, 0.3); }
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--actrs-seablue);
+  box-shadow: 0 0 0 0.2rem rgba(14, 165, 196, 0.25), 0 0 18px rgba(14, 165, 196, 0.25);
+}
+
+/* ---- Home tiles: coloured glowing icon bubbles ------------------------- */
+.capture-tile {
+  position: relative;
+  animation: cap-rise 0.6s var(--cap-ease) both;
+  transition: transform 0.2s var(--cap-ease), box-shadow 0.2s ease;
+  overflow: hidden;
+}
+.capture-tile svg {
+  display: block;
+  margin: 0 auto 0.55rem !important;
+  box-sizing: content-box;
+  padding: 11px;
+  border-radius: 16px;
+  color: #fff;
+  background: var(--tile-grad, var(--cap-grad));
+  box-shadow: 0 8px 18px var(--tile-glow, rgba(14, 165, 196, 0.5));
+  animation: cap-bob 3.6s ease-in-out infinite;
+}
+.capture-tile:hover, .capture-tile:active { transform: translateY(-3px) scale(1.03); box-shadow: 0 14px 30px rgba(18, 51, 99, 0.28); }
+.capture-tile:active { transform: scale(0.95); }
+@keyframes cap-bob { 50% { transform: translateY(-4px); } }
+.row > div:nth-child(1) .capture-tile { --tile-grad: linear-gradient(135deg, #0ea5c4, #1fd3a1); --tile-glow: rgba(31, 211, 161, 0.55); animation-delay: 0.05s; }
+.row > div:nth-child(2) .capture-tile { --tile-grad: linear-gradient(135deg, #7c5cff, #4f8bff); --tile-glow: rgba(124, 92, 255, 0.55); animation-delay: 0.12s; }
+.row > div:nth-child(3) .capture-tile { --tile-grad: linear-gradient(135deg, #ff5fa2, #ff8a5c); --tile-glow: rgba(255, 95, 162, 0.5); animation-delay: 0.19s; }
+.row > div:nth-child(4) .capture-tile { --tile-grad: linear-gradient(135deg, #ffb627, #ff8a1f); --tile-glow: rgba(255, 182, 39, 0.55); animation-delay: 0.26s; }
+.row > div:nth-child(5) .capture-tile { --tile-grad: linear-gradient(135deg, #123363, #0ea5c4); --tile-glow: rgba(14, 165, 196, 0.5); animation-delay: 0.33s; }
+.row > div:nth-child(2) .capture-tile svg { animation-delay: 0.4s; }
+.row > div:nth-child(3) .capture-tile svg { animation-delay: 0.8s; }
+.row > div:nth-child(4) .capture-tile svg { animation-delay: 1.2s; }
+.row > div:nth-child(5) .capture-tile svg { animation-delay: 1.6s; }
+[data-bs-theme="dark"] .capture-tile { color: #e7ebef !important; }
+
+/* ---- Floating dock tab bar --------------------------------------------- */
+.capture-tabbar {
+  margin: 0 10px 10px;
+  border: 1px solid var(--actrs-glass-border) !important;
+  border-radius: 22px;
+  box-shadow: 0 12px 34px rgba(11, 26, 48, 0.28), 0 0 0 1px rgba(14, 165, 196, 0.12);
+  overflow: hidden;
+}
+.capture-tab {
+  position: relative;
+  border-top: 0 !important;
+  transition: color 0.2s ease, transform 0.2s var(--cap-ease);
+}
+.capture-tab svg { transition: transform 0.3s var(--cap-ease); }
+.capture-tab-active {
+  animation: cap-pop 0.45s var(--cap-ease) both;
+  background: radial-gradient(circle at 50% 0%, rgba(14, 165, 196, 0.32), transparent 72%);
+}
+.capture-tab-active svg { transform: translateY(-3px) scale(1.2); filter: drop-shadow(0 4px 8px rgba(14, 165, 196, 0.7)); }
+.capture-tab-active::after {
+  content: "";
+  position: absolute;
+  bottom: 3px; left: 50%;
+  width: 18px; height: 3px;
+  margin-left: -9px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--cap-violet), var(--actrs-seablue), var(--cap-gold));
+  box-shadow: 0 0 10px var(--actrs-seablue);
+  animation: cap-pop 0.5s var(--cap-ease) both;
+}
+
+/* ---- Progress bars ------------------------------------------------------ */
+.capture-progress-track { height: 9px; }
+.capture-progress-fill {
+  background: linear-gradient(90deg, var(--actrs-seablue), var(--cap-green), var(--cap-gold));
+  background-size: 200% 100%;
+  box-shadow: 0 0 12px rgba(14, 165, 196, 0.6);
+  animation: cap-gradient-slide 3s linear infinite;
+  transition: width 1s var(--cap-ease);
+}
+
+/* ---- Splash screen ------------------------------------------------------ */
+.capture-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(124, 92, 255, 0.55), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(255, 182, 39, 0.35), transparent 45%),
+    linear-gradient(160deg, #081a38 0%, #0b3a6b 50%, #0ea5c4 130%);
+  animation: cap-splash-out 0.6s ease 2.3s forwards;
+}
+.capture-splash.is-gone { display: none; }
+@keyframes cap-splash-out { to { opacity: 0; transform: scale(1.08); visibility: hidden; } }
+.capture-splash-logo-wrap { position: relative; width: 190px; height: 150px; display: flex; align-items: center; justify-content: center; }
+.capture-splash-logo-wrap img, .capture-splash-logo-wrap .capture-splash-fallback {
+  position: relative;
+  width: 170px;
+  max-height: 130px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 22px rgba(14, 165, 196, 0.9));
+  animation: cap-logo-in 1s var(--cap-ease) 0.15s both, cap-bob 3s ease-in-out 1.2s infinite;
+}
+.capture-splash-fallback {
+  display: flex; align-items: center; justify-content: center;
+  width: 110px !important; height: 110px; border-radius: 28px;
+  background: var(--cap-grad); font-size: 2.4rem; font-weight: 800;
+}
+.capture-splash-ring {
+  position: absolute;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  border: 2px solid rgba(14, 165, 196, 0.7);
+  animation: cap-ring 2.2s ease-out infinite;
+  opacity: 0;
+}
+.capture-splash-ring:nth-child(2) { animation-delay: 0.7s; }
+.capture-splash-ring:nth-child(3) { animation-delay: 1.4s; }
+@keyframes cap-ring { 0% { transform: scale(0.5); opacity: 0.9; } 100% { transform: scale(2.6); opacity: 0; } }
+@keyframes cap-logo-in { 0% { transform: scale(0.3) rotate(-14deg); opacity: 0; } 70% { transform: scale(1.08) rotate(2deg); opacity: 1; } 100% { transform: none; opacity: 1; } }
+.capture-splash-title { font-size: 1.7rem; font-weight: 800; letter-spacing: 0.04em; animation: cap-rise 0.7s var(--cap-ease) 0.7s both; text-shadow: 0 0 18px rgba(14, 165, 196, 0.9); }
+.capture-splash-sub { font-size: 0.9rem; opacity: 0.85; animation: cap-rise 0.7s var(--cap-ease) 1s both; }
+.capture-splash-dots { display: flex; gap: 7px; margin-top: 10px; animation: cap-rise 0.5s ease 1.2s both; }
+.capture-splash-dots i { width: 9px; height: 9px; border-radius: 50%; background: #fff; animation: cap-dot 1s ease-in-out infinite; }
+.capture-splash-dots i:nth-child(2) { animation-delay: 0.15s; }
+.capture-splash-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes cap-dot { 0%, 100% { transform: scale(0.6); opacity: 0.4; } 50% { transform: scale(1.2); opacity: 1; } }
+
+/* ---- Login hero --------------------------------------------------------- */
+.capture-login-hero { text-align: center; margin-bottom: 1.5rem; }
+.capture-login-hero img {
+  width: 150px;
+  max-height: 110px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 20px rgba(14, 165, 196, 0.6));
+  animation: cap-logo-in 0.9s var(--cap-ease) both, cap-bob 4s ease-in-out 1s infinite;
+}
+.capture-login-title {
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--actrs-navy), var(--actrs-seablue), var(--cap-violet), var(--actrs-seablue));
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: cap-gradient-slide 6s linear infinite;
+}
+[data-bs-theme="dark"] .capture-login-title {
+  background-image: linear-gradient(90deg, #fff, var(--actrs-seablue), var(--cap-gold), var(--actrs-seablue));
+}
+.capture-login-card { animation-delay: 0.2s; box-shadow: 0 18px 50px rgba(18, 51, 99, 0.3), 0 0 40px rgba(14, 165, 196, 0.18); }
+
+/* ---- Respect reduced motion -------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+  }
+  .capture-splash { display: none; }
+}
