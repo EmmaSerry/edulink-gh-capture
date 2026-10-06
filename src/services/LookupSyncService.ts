@@ -13,9 +13,15 @@
  * Called after every successful sign-in, and available as a manual
  * "Refresh data" action - a teacher about to head out to a school with
  * no signal should run this once, on the way out, while still online.
+ *
+ * A TEACHER only gets their own class(es) cached (the classes they are
+ * assigned to as class teacher) and only those classes' levels - so the
+ * Level / Class drop-downs on Register, Assessment, Remarks and Progress
+ * show just their class, the same way the web dashboard does. Everyone
+ * else (school admin, bursar, ...) still gets every class.
  */
 import { rest } from "@/lib/supabaseClient";
-import { captureDb } from "@/lib/offlineDb";
+import { captureDb, getCachedProfile } from "@/lib/offlineDb";
 import type {
   AcademicYearRow,
   TermRow,
@@ -37,7 +43,7 @@ import type {
 
 export const LookupSyncService = {
   async syncAll(): Promise<void> {
-    const [academicYears, terms, levels, classes, subjects, learningAreas, skills, students, schools] = await Promise.all([
+    const [academicYears, terms, allLevels, allClasses, subjects, learningAreas, skills, students, schools] = await Promise.all([
       rest.select<AcademicYearRow>("academic_years"),
       rest.select<TermRow>("terms"),
       rest.select<LevelRow>("levels", { filters: { is_active: "eq.true" }, order: "sort_order.asc" }),
@@ -52,6 +58,16 @@ export const LookupSyncService = {
       // exactly like CloudReportRemarksEntry does.
       rest.select<SchoolRow>("schools"),
     ]);
+
+    // A teacher only works with the class(es) assigned to them.
+    let classes = allClasses;
+    let levels = allLevels;
+    const me = await getCachedProfile();
+    if (me?.role === "teacher") {
+      classes = allClasses.filter((c) => c.class_teacher_id === me.id);
+      const ownLevelIds = new Set(classes.map((c) => c.level_id));
+      levels = allLevels.filter((l) => ownLevelIds.has(l.id));
+    }
 
     const activeTerm = terms.find((t) => t.is_active) ?? null;
     let enrollments: EnrollmentRow[] = [];
@@ -71,8 +87,8 @@ export const LookupSyncService = {
         // bursar can record a payment against a fee already generated
         // online, with no signal. RLS returns an empty list here for
         // anyone who isn't a fee manager (bursar/school_admin/
-        // district_admin/platform_admin) - not an error, just nothing
-        // to cache, same as every other role-scoped table.
+        // platform_admin) - not an error, just nothing to cache, same
+        // as every other role-scoped table.
         rest.select<FeeStructureRow>("fee_structures", { filters: { term_id: `eq.${activeTerm.id}` } }),
         rest.select<StudentFeeRow>("student_fees", { filters: { term_id: `eq.${activeTerm.id}` } }),
       ]);
