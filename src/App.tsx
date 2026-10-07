@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { CaptureAuthProvider } from "@contexts/CaptureAuthContext";
 import { ThemeProvider } from "@contexts/ThemeContext";
@@ -11,8 +12,15 @@ import { CaptureRemarksAttendance } from "@pages/CaptureRemarksAttendance";
 import { CaptureFees } from "@pages/CaptureFees";
 import { CaptureProgress } from "@pages/CaptureProgress";
 import { CaptureSyncStatus } from "@pages/CaptureSyncStatus";
+import { runOutboxMaintenance } from "@/services/OutboxMaintenance";
 
 export default function App() {
+  // Tidy the on-phone sync history each time the app opens (and clear the
+  // leftover testing history once).
+  useEffect(() => {
+    void runOutboxMaintenance();
+  }, []);
+
   return (
     <ThemeProvider>
       <CaptureAuthProvider>
