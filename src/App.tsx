@@ -12,11 +12,12 @@ import { CaptureRemarksAttendance } from "@pages/CaptureRemarksAttendance";
 import { CaptureFees } from "@pages/CaptureFees";
 import { CaptureProgress } from "@pages/CaptureProgress";
 import { CaptureSyncStatus } from "@pages/CaptureSyncStatus";
+import { InstallAppButton } from "@/components/InstallAppButton";
 import { runOutboxMaintenance } from "@/services/OutboxMaintenance";
 
 export default function App() {
-  // Tidy the on-phone sync history each time the app opens (and clear the
-  // leftover testing history once).
+  // Tidy the on-phone sync history each time the app opens (needs the
+  // "clear sync history" update - see edulink-gh-capture-clear-history).
   useEffect(() => {
     void runOutboxMaintenance();
   }, []);
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/sync" element={<CaptureSyncStatus />} />
           </Route>
         </Routes>
+        <InstallAppButton />
       </CaptureAuthProvider>
     </ThemeProvider>
   );
