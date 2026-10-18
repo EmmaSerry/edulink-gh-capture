@@ -11,6 +11,7 @@ import { CaptureAssessment } from "@pages/CaptureAssessment";
 import { CaptureRemarksAttendance } from "@pages/CaptureRemarksAttendance";
 import { CaptureFees } from "@pages/CaptureFees";
 import { CaptureProgress } from "@pages/CaptureProgress";
+import { CaptureDashboard } from "@pages/CaptureDashboard";
 import { CaptureLearners } from "@pages/CaptureLearners";
 import { CaptureLearnerEdit } from "@pages/CaptureLearnerEdit";
 import { startLearnerEditSync } from "@/services/LearnerEditService";
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/remarks" element={<CaptureRemarksAttendance />} />
             <Route path="/fees" element={<CaptureFees />} />
             <Route path="/progress" element={<CaptureProgress />} />
+            <Route path="/dashboard" element={<CaptureDashboard />} />
             <Route path="/learners" element={<CaptureLearners />} />
             <Route path="/learners/:id" element={<CaptureLearnerEdit />} />
             <Route path="/sync" element={<CaptureSyncStatus />} />

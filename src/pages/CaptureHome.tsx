@@ -110,6 +110,12 @@ export function CaptureHome() {
         </Link>
       </div>
 
+      <Link to="/dashboard" className="capture-tile text-decoration-none d-block mb-2" style={{ padding: "1.2rem" }}>
+        <IconChart size={28} className="mb-2" />
+        <span className="fw-semibold">Open dashboard</span>
+        <span className="d-block small text-muted">Learners, class statistics and what needs attention</span>
+      </Link>
+
       <div className="row g-2">
         <div className="col-6">
           <Link to="/register" className="capture-tile text-decoration-none d-block">
