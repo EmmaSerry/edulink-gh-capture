@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { captureDb } from "@/lib/offlineDb";
 import { useCaptureAuth } from "@/contexts/CaptureAuthContext";
+import { LookupSyncService } from "@/services/LookupSyncService";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { CaptureCountUp } from "@/components/CaptureCountUp";
 import {
   AgeColumns,
@@ -85,42 +87,69 @@ export function CaptureDashboard() {
   const [classId, setClassId] = useState("");
   const [search, setSearch] = useState("");
 
+  const online = useOnlineStatus();
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+
+  async function load(): Promise<void> {
+    const [terms, classes, levels, students, enrollments, subjects, scores, areas, skills, ratings, schools] = await Promise.all([
+      captureDb.terms.toArray(),
+      captureDb.classes.toArray(),
+      captureDb.levels.orderBy("sort_order").toArray(),
+      captureDb.students.toArray(),
+      captureDb.enrollments.toArray(),
+      captureDb.subjects.toArray(),
+      captureDb.scoreRecords.toArray(),
+      captureDb.learningAreas.toArray(),
+      captureDb.skills.toArray(),
+      captureDb.skillRatings.toArray(),
+      captureDb.schools.toArray(),
+    ]);
+    const order = new Map(levels.map((l) => [l.id, l.sort_order]));
+    classes.sort((a, b) => (order.get(a.level_id) ?? 0) - (order.get(b.level_id) ?? 0) || a.name.localeCompare(b.name));
+    const activeTerm = terms.find((t) => t.is_active) ?? null;
+    // One enrollment per learner: this term's, preferring the current one.
+    const best = new Map<string, EnrollmentRow>();
+    for (const e of enrollments) {
+      if (activeTerm && e.term_id !== activeTerm.id) continue;
+      const prev = best.get(e.student_id);
+      if (!prev || (e.is_current && !prev.is_current)) best.set(e.student_id, e);
+    }
+    setData({
+      term: activeTerm,
+      school: schools[0] ?? null,
+      classes,
+      levels,
+      students,
+      enrollments: [...best.values()],
+      subjects,
+      scores,
+      areas,
+      skills,
+      ratings,
+    });
+  }
+
+  async function refresh(): Promise<void> {
+    setRefreshing(true);
+    setRefreshError(null);
+    try {
+      await LookupSyncService.syncAll();
+      await load();
+    } catch (err) {
+      setRefreshError(err instanceof Error ? err.message : "Could not refresh.");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  // Show what is on the phone straight away, then (when online) bring it up
+  // to date so newly registered learners and scores appear.
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const [terms, classes, levels, students, enrollments, subjects, scores, areas, skills, ratings, schools] = await Promise.all([
-        captureDb.terms.toArray(),
-        captureDb.classes.toArray(),
-        captureDb.levels.orderBy("sort_order").toArray(),
-        captureDb.students.toArray(),
-        captureDb.enrollments.filter((e) => e.is_current).toArray(),
-        captureDb.subjects.toArray(),
-        captureDb.scoreRecords.toArray(),
-        captureDb.learningAreas.toArray(),
-        captureDb.skills.toArray(),
-        captureDb.skillRatings.toArray(),
-        captureDb.schools.toArray(),
-      ]);
-      if (cancelled) return;
-      const order = new Map(levels.map((l) => [l.id, l.sort_order]));
-      classes.sort((a, b) => (order.get(a.level_id) ?? 0) - (order.get(b.level_id) ?? 0) || a.name.localeCompare(b.name));
-      setData({
-        term: terms.find((t) => t.is_active) ?? null,
-        school: schools[0] ?? null,
-        classes,
-        levels,
-        students,
-        enrollments,
-        subjects,
-        scores,
-        areas,
-        skills,
-        ratings,
-      });
-    })();
-    return () => {
-      cancelled = true;
-    };
+    void load().then(() => {
+      if (navigator.onLine) void refresh();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const view = useMemo(() => {
@@ -268,6 +297,12 @@ export function CaptureDashboard() {
   }
 
   const isTeacher = profile?.role === "teacher";
+  // A teacher's cached classes are the ones assigned to them, so name them.
+  const scopeLabel = classId
+    ? data.classes.find((c) => c.id === classId)?.name ?? ""
+    : isTeacher
+      ? data.classes.map((c) => c.name).join(", ")
+      : "Whole school";
   const kpis: { n: number; label: string }[] = [
     { n: view.learners.length, label: "Learners" },
     { n: view.male, label: "Boys" },
@@ -288,10 +323,14 @@ export function CaptureDashboard() {
           <h1 className="h4 mb-0">Dashboard</h1>
           <p className="text-muted small mb-0">
             {data.school?.name ?? "Your school"} · {data.term.term_name}
-            {isTeacher ? " · your class" : ""}
+            {scopeLabel ? ` · ${scopeLabel}` : ""}
           </p>
         </div>
+        <button className="btn btn-outline-primary btn-sm" disabled={!online || refreshing} onClick={() => void refresh()}>
+          {refreshing ? "Refreshing..." : "Refresh"}
+        </button>
       </div>
+      {refreshError && <div className="alert alert-danger py-2 small">{refreshError}</div>}
 
       {data.classes.length > 1 && (
         <select className="form-select mb-3" value={classId} onChange={(e) => setClassId(e.target.value)}>
