@@ -138,6 +138,12 @@ export function CaptureHome() {
           </div>
         )}
         <div className="col-6">
+          <Link to="/learners" className="capture-tile text-decoration-none d-block">
+            <IconPersonPlus size={26} className="mb-2" />
+            <span>Edit learners</span>
+          </Link>
+        </div>
+        <div className="col-6">
           <Link to="/progress" className="capture-tile text-decoration-none d-block">
             <IconChart size={26} className="mb-2" />
             <span>Class progress</span>

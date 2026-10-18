@@ -11,6 +11,9 @@ import { CaptureAssessment } from "@pages/CaptureAssessment";
 import { CaptureRemarksAttendance } from "@pages/CaptureRemarksAttendance";
 import { CaptureFees } from "@pages/CaptureFees";
 import { CaptureProgress } from "@pages/CaptureProgress";
+import { CaptureLearners } from "@pages/CaptureLearners";
+import { CaptureLearnerEdit } from "@pages/CaptureLearnerEdit";
+import { startLearnerEditSync } from "@/services/LearnerEditService";
 import { CaptureSyncStatus } from "@pages/CaptureSyncStatus";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { runOutboxMaintenance } from "@/services/OutboxMaintenance";
@@ -20,6 +23,7 @@ export default function App() {
   // "clear sync history" update - see edulink-gh-capture-clear-history).
   useEffect(() => {
     void runOutboxMaintenance();
+    startLearnerEditSync();
   }, []);
 
   return (
@@ -40,6 +44,8 @@ export default function App() {
             <Route path="/remarks" element={<CaptureRemarksAttendance />} />
             <Route path="/fees" element={<CaptureFees />} />
             <Route path="/progress" element={<CaptureProgress />} />
+            <Route path="/learners" element={<CaptureLearners />} />
+            <Route path="/learners/:id" element={<CaptureLearnerEdit />} />
             <Route path="/sync" element={<CaptureSyncStatus />} />
           </Route>
         </Routes>
