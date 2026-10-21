@@ -2,13 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { captureDb } from "@/lib/offlineDb";
 import { CaptureService } from "@/services/CaptureService";
 import { KG_GENERAL_COMMENT_BANK } from "@/constants/kgCommentBank";
-import {
-  CONDUCT_COMMENT_BANK,
-  INTEREST_COMMENT_BANK,
-  ATTITUDE_COMMENT_BANK,
-  CLASS_TEACHER_REMARK_BANK,
-  HEADTEACHER_REMARK_BANK,
-} from "@/constants/scoredRemarkCommentBanks";
+import { RemarkPicker } from "@/components/RemarkPicker";
 import type { TermRow, ClassRow, LevelRow, StudentRow, ReportRecordRow, SchoolRow } from "@/types/database";
 
 function fullNameOf(s: StudentRow): string {
@@ -70,48 +64,6 @@ function SaveButton({ state, onClick }: { state: SaveState; onClick: () => void 
       </button>
       {state === "saved" && <span className="text-success small">Saved - will sync when online</span>}
     </div>
-  );
-}
-
-/** A quick-fill dropdown stacked above a free-text input - selecting an
- *  option copies it into the field below, which stays a normal text
- *  input the teacher can still edit or overwrite by typing their own
- *  remark instead. Same pattern KgCard's General comments box already
- *  used, just reused for every scored-level remark field. */
-function QuickFillField({
-  bank,
-  value,
-  onChange,
-}: {
-  bank: string[];
-  value: string;
-  onChange: (next: string) => void;
-}) {
-  return (
-    <>
-      <select
-        className="form-select form-select-sm mb-1"
-        value=""
-        onChange={(e) => {
-          if (!e.target.value) return;
-          onChange(e.target.value);
-        }}
-      >
-        <option value="">Quick-fill…</option>
-        {bank.map((phrase) => (
-          <option key={phrase} value={phrase}>
-            {phrase}
-          </option>
-        ))}
-      </select>
-      <input
-        type="text"
-        className="form-control form-control-sm"
-        placeholder="Or type your own…"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </>
   );
 }
 
@@ -179,23 +131,23 @@ function ScoredCard({
         </div>
         <div className="col-12">
           <label className="form-label small text-muted mb-1">Class teacher's remark</label>
-          <QuickFillField bank={CLASS_TEACHER_REMARK_BANK} value={draft.class_teacher_remark} onChange={(v) => set("class_teacher_remark", v)} />
+          <RemarkPicker kind="class_teacher" value={draft.class_teacher_remark} onChange={(v) => set("class_teacher_remark", v)} />
         </div>
         <div className="col-12">
           <label className="form-label small text-muted mb-1">Headteacher's remark</label>
-          <QuickFillField bank={HEADTEACHER_REMARK_BANK} value={draft.headteacher_remark} onChange={(v) => set("headteacher_remark", v)} />
+          <RemarkPicker kind="headteacher" value={draft.headteacher_remark} onChange={(v) => set("headteacher_remark", v)} />
         </div>
         <div className="col-12">
           <label className="form-label small text-muted mb-1">Conduct</label>
-          <QuickFillField bank={CONDUCT_COMMENT_BANK} value={draft.conduct_remark} onChange={(v) => set("conduct_remark", v)} />
+          <RemarkPicker kind="conduct" value={draft.conduct_remark} onChange={(v) => set("conduct_remark", v)} />
         </div>
         <div className="col-12">
           <label className="form-label small text-muted mb-1">Interest</label>
-          <QuickFillField bank={INTEREST_COMMENT_BANK} value={draft.interest_remark} onChange={(v) => set("interest_remark", v)} />
+          <RemarkPicker kind="interest" value={draft.interest_remark} onChange={(v) => set("interest_remark", v)} />
         </div>
         <div className="col-12">
           <label className="form-label small text-muted mb-1">Attitude</label>
-          <QuickFillField bank={ATTITUDE_COMMENT_BANK} value={draft.attitude_remark} onChange={(v) => set("attitude_remark", v)} />
+          <RemarkPicker kind="attitude" value={draft.attitude_remark} onChange={(v) => set("attitude_remark", v)} />
         </div>
       </div>
       <SaveButton state={saveState} onClick={handleSave} />
