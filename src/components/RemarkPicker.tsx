@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CONDUCT_RATINGS,
   GROUPS_BY_KIND,
@@ -37,6 +37,25 @@ interface PickerProps {
 function ChipPicker({ kind, chips, onChange, placeholder }: PickerProps) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  const boxRef = useRef<HTMLDivElement | null>(null);
+
+  // Collapse when the user clicks or taps anywhere outside this picker, or tabs away.
+  useEffect(() => {
+    if (!open) return;
+    function away(ev: Event) {
+      if (boxRef.current && ev.target instanceof Node && !boxRef.current.contains(ev.target)) {
+        setOpen(false);
+        setQ("");
+      }
+    }
+    document.addEventListener("mousedown", away);
+    document.addEventListener("touchstart", away);
+    return () => {
+      document.removeEventListener("mousedown", away);
+      document.removeEventListener("touchstart", away);
+    };
+  }, [open]);
+
   const chosen = useMemo(() => new Set(chips.map((c) => normKey(c.text))), [chips]);
   const needle = q.trim().toLowerCase();
 
@@ -57,6 +76,7 @@ function ChipPicker({ kind, chips, onChange, placeholder }: PickerProps) {
     if (!t || chosen.has(normKey(t))) return;
     onChange([...texts, t]);
     setQ("");
+    setOpen(false);
   }
   function removeAt(i: number) {
     onChange(texts.filter((_, idx) => idx !== i));
@@ -64,7 +84,7 @@ function ChipPicker({ kind, chips, onChange, placeholder }: PickerProps) {
   const exact = needle && GROUPS_BY_KIND[kind].some((g) => g.items.some((i) => normKey(i) === normKey(q)));
 
   return (
-    <div>
+    <div ref={boxRef}>
       {chips.length > 0 && (
         <div className="d-flex flex-wrap gap-1 mb-1">
           {chips.map((c, i) => (
@@ -99,8 +119,9 @@ function ChipPicker({ kind, chips, onChange, placeholder }: PickerProps) {
             if (!q.trim()) return;
             const all = groups.flatMap((g) => g.items);
             add(exact || all.length !== 1 ? q : all[0]);
-          } else if (e.key === "Escape") {
+          } else if (e.key === "Escape" || e.key === "Tab") {
             setOpen(false);
+            setQ("");
           }
         }}
       />
