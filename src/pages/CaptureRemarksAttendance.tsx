@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { captureDb } from "@/lib/offlineDb";
 import { CaptureService } from "@/services/CaptureService";
 import { KG_GENERAL_COMMENT_BANK } from "@/constants/kgCommentBank";
@@ -67,13 +67,49 @@ function SaveButton({ state, onClick }: { state: SaveState; onClick: () => void 
   );
 }
 
+type Broadcast<D> = { version: number; draft: D } | null;
+
+/** Validated database changes for a scored-level draft, or null if the days-present box is invalid. */
+function scoredChanges(d: ScoredDraft): Partial<ReportRecordRow> | null {
+  const daysPresentValue = d.days_present.trim() === "" ? null : Number(d.days_present);
+  if (daysPresentValue !== null && (Number.isNaN(daysPresentValue) || daysPresentValue < 0)) return null;
+  return {
+    days_present: daysPresentValue,
+    conduct_remark: d.conduct_remark.trim() === "" ? null : d.conduct_remark,
+    interest_remark: d.interest_remark.trim() === "" ? null : d.interest_remark,
+    attitude_remark: d.attitude_remark.trim() === "" ? null : d.attitude_remark,
+    class_teacher_remark: d.class_teacher_remark.trim() === "" ? null : d.class_teacher_remark,
+    headteacher_remark: d.headteacher_remark.trim() === "" ? null : d.headteacher_remark,
+    progression: d.progression.trim() === "" ? null : d.progression,
+  };
+}
+
+/** Same for a KG draft. */
+function kgChanges(d: KgDraft): Partial<ReportRecordRow> | null {
+  const daysPresentValue = d.days_present.trim() === "" ? null : Number(d.days_present);
+  if (daysPresentValue !== null && (Number.isNaN(daysPresentValue) || daysPresentValue < 0)) return null;
+  return {
+    days_present: daysPresentValue,
+    general_comment: d.general_comment.trim() === "" ? null : d.general_comment,
+    class_teacher_name: d.class_teacher_name.trim() === "" ? null : d.class_teacher_name,
+    head_teacher_name: d.head_teacher_name.trim() === "" ? null : d.head_teacher_name,
+    progression: d.progression.trim() === "" ? null : d.progression,
+  };
+}
+
 function ScoredCard({
   student,
   record,
+  isSource,
+  broadcast,
+  onDraft,
   onSave,
 }: {
   student: StudentRow;
   record: ReportRecordRow | undefined;
+  isSource: boolean;
+  broadcast: Broadcast<ScoredDraft>;
+  onDraft: (studentId: string, draft: ScoredDraft) => void;
   onSave: (studentId: string, changes: Partial<ReportRecordRow>) => void;
 }) {
   const [draft, setDraft] = useState<ScoredDraft>(() => scoredDraftFromRecord(record));
@@ -84,24 +120,30 @@ function ScoredCard({
     setSaveState("idle");
   }, [record]);
 
+  // Tell the page what this learner's current entries are (used by "copy to everyone" and "Save all").
+  useEffect(() => {
+    onDraft(student.id, draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft]);
+
+  // "Use one learner's entries for everyone": non-source learners take over the copied entries.
+  useEffect(() => {
+    if (!broadcast || isSource) return;
+    setDraft(broadcast.draft);
+    setSaveState("idle");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [broadcast?.version]);
+
   function set<K extends keyof ScoredDraft>(key: K, value: string) {
     setDraft((d) => ({ ...d, [key]: value }));
     setSaveState("idle");
   }
 
   function handleSave() {
-    const daysPresentValue = draft.days_present.trim() === "" ? null : Number(draft.days_present);
-    if (daysPresentValue !== null && (Number.isNaN(daysPresentValue) || daysPresentValue < 0)) return;
+    const changes = scoredChanges(draft);
+    if (!changes) return;
     setSaveState("saving");
-    onSave(student.id, {
-      days_present: daysPresentValue,
-      conduct_remark: draft.conduct_remark.trim() === "" ? null : draft.conduct_remark,
-      interest_remark: draft.interest_remark.trim() === "" ? null : draft.interest_remark,
-      attitude_remark: draft.attitude_remark.trim() === "" ? null : draft.attitude_remark,
-      class_teacher_remark: draft.class_teacher_remark.trim() === "" ? null : draft.class_teacher_remark,
-      headteacher_remark: draft.headteacher_remark.trim() === "" ? null : draft.headteacher_remark,
-      progression: draft.progression.trim() === "" ? null : draft.progression,
-    });
+    onSave(student.id, changes);
     setSaveState("saved");
   }
 
@@ -158,12 +200,18 @@ function ScoredCard({
 function KgCard({
   student,
   record,
+  isSource,
+  broadcast,
+  onDraft,
   cls,
   school,
   onSave,
 }: {
   student: StudentRow;
   record: ReportRecordRow | undefined;
+  isSource: boolean;
+  broadcast: Broadcast<KgDraft>;
+  onDraft: (studentId: string, draft: KgDraft) => void;
   cls: ClassRow | null;
   school: SchoolRow | null;
   onSave: (studentId: string, changes: Partial<ReportRecordRow>) => void;
@@ -176,17 +224,25 @@ function KgCard({
     setSaveState("idle");
   }, [record, cls, school]);
 
+  // Tell the page what this learner's current entries are (used by "copy to everyone" and "Save all").
+  useEffect(() => {
+    onDraft(student.id, draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft]);
+
+  // "Use one learner's entries for everyone": non-source learners take over the copied entries.
+  useEffect(() => {
+    if (!broadcast || isSource) return;
+    setDraft(broadcast.draft);
+    setSaveState("idle");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [broadcast?.version]);
+
   function handleSave() {
-    const daysPresentValue = draft.days_present.trim() === "" ? null : Number(draft.days_present);
-    if (daysPresentValue !== null && (Number.isNaN(daysPresentValue) || daysPresentValue < 0)) return;
+    const changes = kgChanges(draft);
+    if (!changes) return;
     setSaveState("saving");
-    onSave(student.id, {
-      days_present: daysPresentValue,
-      general_comment: draft.general_comment.trim() === "" ? null : draft.general_comment,
-      class_teacher_name: draft.class_teacher_name.trim() === "" ? null : draft.class_teacher_name,
-      head_teacher_name: draft.head_teacher_name.trim() === "" ? null : draft.head_teacher_name,
-      progression: draft.progression.trim() === "" ? null : draft.progression,
-    });
+    onSave(student.id, changes);
     setSaveState("saved");
   }
 
@@ -340,6 +396,86 @@ export function CaptureRemarksAttendance() {
   const isScoredLevel = selectedLevel?.assessment_mode === "scored";
   const isSkillLevel = selectedLevel?.assessment_mode === "skill-checklist";
 
+  // ---- "Use one learner's entries for everyone" + "Save all" ----
+  const [applyAll, setApplyAll] = useState(false);
+  const [sourceId, setSourceId] = useState("");
+  const [broadcast, setBroadcast] = useState<{ version: number; draft: ScoredDraft | KgDraft } | null>(null);
+  const [savingAll, setSavingAll] = useState(false);
+  const [saveAllMsg, setSaveAllMsg] = useState<string | null>(null);
+  const draftsRef = useRef(new Map<string, ScoredDraft | KgDraft>());
+  const versionRef = useRef(0);
+  const applyAllRef = useRef(false);
+  const sourceRef = useRef("");
+
+  useEffect(() => {
+    // New class selected: start fresh.
+    applyAllRef.current = false;
+    sourceRef.current = "";
+    draftsRef.current = new Map();
+    setApplyAll(false);
+    setSourceId("");
+    setBroadcast(null);
+    setSaveAllMsg(null);
+  }, [classId]);
+
+  const handleDraft = useCallback((studentId: string, draft: ScoredDraft | KgDraft) => {
+    draftsRef.current.set(studentId, draft);
+    if (applyAllRef.current && studentId === sourceRef.current) {
+      versionRef.current += 1;
+      setBroadcast({ version: versionRef.current, draft });
+    }
+  }, []);
+
+  function pushFrom(id: string) {
+    const d = draftsRef.current.get(id);
+    if (!d) return;
+    versionRef.current += 1;
+    setBroadcast({ version: versionRef.current, draft: d });
+  }
+
+  function toggleApplyAll(checked: boolean) {
+    applyAllRef.current = checked;
+    setApplyAll(checked);
+    setSaveAllMsg(null);
+    if (checked) {
+      const id = sourceRef.current || students[0]?.id || "";
+      sourceRef.current = id;
+      setSourceId(id);
+      pushFrom(id);
+    }
+  }
+
+  function changeSource(id: string) {
+    sourceRef.current = id;
+    setSourceId(id);
+    if (applyAllRef.current) pushFrom(id);
+  }
+
+  async function saveAll() {
+    if (students.length === 0) return;
+    setSavingAll(true);
+    setSaveAllMsg(null);
+    let saved = 0;
+    let failed = 0;
+    for (const s of students) {
+      const d = draftsRef.current.get(s.id);
+      if (!d) continue;
+      const changes = isScoredLevel ? scoredChanges(d as ScoredDraft) : kgChanges(d as KgDraft);
+      if (!changes) {
+        failed += 1;
+        continue;
+      }
+      try {
+        saveRow(s.id, changes);
+        saved += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    setSavingAll(false);
+    setSaveAllMsg(`${saved} learner(s) saved${failed ? `, ${failed} could not be saved (check days present)` : ""}.`);
+  }
+
   useEffect(() => {
     if (!classId || !term || !selectedLevel) {
       setStudents([]);
@@ -404,6 +540,53 @@ export function CaptureRemarksAttendance() {
         </select>
       </div>
 
+      {classId && (isScoredLevel || isSkillLevel) && !loadingClass && students.length > 0 && (
+        <div className="actrs-card p-3 mb-3">
+          <div className="form-check">
+            <input
+              id="apply-all-learners"
+              type="checkbox"
+              className="form-check-input"
+              checked={applyAll}
+              onChange={(e) => toggleApplyAll(e.target.checked)}
+            />
+            <label htmlFor="apply-all-learners" className="form-check-label fw-medium">
+              Use one learner's entries for every learner in this class
+            </label>
+          </div>
+          {applyAll && (
+            <div className="mt-2">
+              <div className="d-flex flex-wrap align-items-center gap-2">
+                <span className="small">Copy from:</span>
+                <select
+                  className="form-select form-select-sm"
+                  style={{ maxWidth: 280 }}
+                  value={sourceId}
+                  onChange={(e) => changeSource(e.target.value)}
+                >
+                  {students.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {fullNameOf(s)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="small text-muted mb-0 mt-1">
+                Whatever you enter for this learner (attendance, remarks and everything else) is copied to all the
+                others. Then change the few learners who differ - their changes stay until you edit the copied
+                learner again. Nothing is saved until you press Save.
+              </p>
+            </div>
+          )}
+          <div className="d-flex flex-wrap align-items-center gap-2 mt-2">
+            <button type="button" className="btn btn-primary btn-sm" disabled={savingAll} onClick={saveAll}>
+              {savingAll ? "Saving all learners…" : "Save all learners"}
+            </button>
+            {saveAllMsg && <span className="small text-muted">{saveAllMsg}</span>}
+          </div>
+        </div>
+      )}
+
       {classId && (isScoredLevel || isSkillLevel) && (
         <div className="actrs-card p-0">
           {loadingClass && <p className="text-muted text-center py-4 mb-0">Loading…</p>}
@@ -416,7 +599,7 @@ export function CaptureRemarksAttendance() {
           {!loadingClass &&
             isScoredLevel &&
             students.map((student) => (
-              <ScoredCard key={student.id} student={student} record={records.get(student.id)} onSave={saveRow} />
+              <ScoredCard key={student.id} student={student} record={records.get(student.id)} isSource={applyAll && student.id === sourceId} broadcast={broadcast as { version: number; draft: ScoredDraft } | null} onDraft={handleDraft as (id: string, d: ScoredDraft) => void} onSave={saveRow} />
             ))}
           {!loadingClass &&
             isSkillLevel &&
@@ -424,7 +607,7 @@ export function CaptureRemarksAttendance() {
               <KgCard
                 key={student.id}
                 student={student}
-                record={records.get(student.id)}
+                record={records.get(student.id)} isSource={applyAll && student.id === sourceId} broadcast={broadcast as { version: number; draft: KgDraft } | null} onDraft={handleDraft as (id: string, d: KgDraft) => void}
                 cls={selectedClass}
                 school={school}
                 onSave={saveRow}
