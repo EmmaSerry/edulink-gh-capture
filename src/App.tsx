@@ -14,7 +14,9 @@ import { CaptureProgress } from "@pages/CaptureProgress";
 import { CaptureDashboard } from "@pages/CaptureDashboard";
 import { CaptureLearners } from "@pages/CaptureLearners";
 import { CaptureLearnerEdit } from "@pages/CaptureLearnerEdit";
+import { CaptureMock } from "@pages/CaptureMock";
 import { startLearnerEditSync } from "@/services/LearnerEditService";
+import { startMockSync } from "@/services/MockCaptureService";
 import { CaptureSyncStatus } from "@pages/CaptureSyncStatus";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { runOutboxMaintenance } from "@/services/OutboxMaintenance";
@@ -25,6 +27,7 @@ export default function App() {
   useEffect(() => {
     void runOutboxMaintenance();
     startLearnerEditSync();
+    startMockSync();
   }, []);
 
   return (
@@ -43,6 +46,7 @@ export default function App() {
             <Route path="/register" element={<CaptureRegister />} />
             <Route path="/assessment" element={<CaptureAssessment />} />
             <Route path="/remarks" element={<CaptureRemarksAttendance />} />
+            <Route path="/mock" element={<CaptureMock />} />
             <Route path="/fees" element={<CaptureFees />} />
             <Route path="/progress" element={<CaptureProgress />} />
             <Route path="/dashboard" element={<CaptureDashboard />} />

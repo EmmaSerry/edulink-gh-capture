@@ -5,6 +5,7 @@ import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useOutboxStatus } from "@/hooks/useOutboxStatus";
 import { LookupSyncService } from "@/services/LookupSyncService";
 import { SyncEngine } from "@/services/SyncEngine";
+import { MockCaptureService, onMockChange } from "@/services/MockCaptureService";
 import { getLastLookupSyncAt, captureDb } from "@/lib/offlineDb";
 import { CaptureCountUp } from "@/components/CaptureCountUp";
 import { IconPersonPlus, IconClipboardCheck, IconNotebook, IconCash, IconChart, IconSync } from "@/components/CaptureIcons";
@@ -12,6 +13,8 @@ import { IconPersonPlus, IconClipboardCheck, IconNotebook, IconCash, IconChart, 
 // Same role set as CaptureLayout.tsx / CaptureFees.tsx. District
 // administrators have no access to finances.
 const FEE_MANAGER_ROLES = new Set(["bursar", "school_admin", "platform_admin"]);
+// Mock exam marks entry: same people who can enter marks in the web app.
+const MOCK_ROLES = new Set(["school_admin", "teacher", "platform_admin"]);
 import type { TermRow } from "@/types/database";
 
 function formatWhen(iso: string | null): string {
@@ -34,11 +37,15 @@ export function CaptureHome() {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [studentCount, setStudentCount] = useState<number | null>(null);
+  const [mockPending, setMockPending] = useState(0);
 
   useEffect(() => {
     void getLastLookupSyncAt().then(setLastSync);
     void captureDb.terms.filter((t) => t.is_active).first().then((t) => setTerm(t ?? null));
     void captureDb.students.count().then(setStudentCount);
+    const loadMock = () => void MockCaptureService.pendingCount().then(setMockPending);
+    loadMock();
+    return onMockChange(loadMock);
   }, []);
 
   async function handleRefresh() {
@@ -135,6 +142,15 @@ export function CaptureHome() {
             <span>Remarks &amp; attendance</span>
           </Link>
         </div>
+        {profile && MOCK_ROLES.has(profile.role) && (
+          <div className="col-6">
+            <Link to="/mock" className="capture-tile text-decoration-none d-block">
+              <IconClipboardCheck size={26} className="mb-2" />
+              <span>Mock exam marks</span>
+              {mockPending > 0 && <span className="d-block small text-warning">{mockPending} unsent</span>}
+            </Link>
+          </div>
+        )}
         {profile && FEE_MANAGER_ROLES.has(profile.role) && (
           <div className="col-6">
             <Link to="/fees" className="capture-tile text-decoration-none d-block">
