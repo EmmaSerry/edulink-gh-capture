@@ -61,6 +61,16 @@ export function onMockChange(cb: Listener): () => void {
   return () => listeners.delete(cb);
 }
 
+/** Browsers report any network failure as "Failed to fetch"; say what it means in plain words. */
+export function friendlyError(e: unknown, fallback: string): string {
+  const m = e instanceof Error ? e.message : "";
+  if (!m) return fallback;
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(m)) {
+    return "Could not reach the server. Check the internet connection and try again. Marks already typed are safe on this phone.";
+  }
+  return m;
+}
+
 export interface MockSendResult {
   sent: number;
   failed: Array<{ mockName: string; message: string }>;
@@ -158,7 +168,7 @@ export const MockCaptureService = {
             /* the marks are saved; the copy on the phone refreshes at the next download */
           }
         } catch (e) {
-          result.failed.push({ mockName: name, message: e instanceof Error ? e.message : "Could not send these marks." });
+          result.failed.push({ mockName: name, message: friendlyError(e, "Could not send these marks.") });
         }
         notify();
       }
@@ -173,6 +183,8 @@ export const MockCaptureService = {
 /** Send waiting marks whenever the phone comes back online. Call once when the app starts. */
 export function startMockSync(): void {
   if (typeof window === "undefined") return;
+  // Ask the browser not to clear the saved mocks and marks when the phone runs low on space.
+  void navigator.storage?.persist?.();
   window.addEventListener("online", () => {
     void MockCaptureService.send();
   });

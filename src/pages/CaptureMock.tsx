@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
-import { MockCaptureService, onMockChange, type CachedMock } from "@/services/MockCaptureService";
+import { MockCaptureService, friendlyError, onMockChange, type CachedMock } from "@/services/MockCaptureService";
 import { gradeForMark } from "@/mock/mockEngine";
 import { cellKey, displayText, storedText, validateCellText, type PendingChange } from "@/mock/mockCaptureLogic";
+
+const MEMORY = "edulink-capture-mock-choice";
+function remembered(field: "mockId" | "subjectId" | "cls"): string {
+  try {
+    const raw = window.localStorage.getItem(MEMORY);
+    return raw ? ((JSON.parse(raw) as Record<string, string>)[field] ?? "") : "";
+  } catch {
+    return "";
+  }
+}
 
 function when(iso: string | null): string {
   if (!iso) return "Never";
@@ -22,20 +32,40 @@ export function CaptureMock() {
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
-  const [mockId, setMockId] = useState("");
-  const [subjectId, setSubjectId] = useState("");
-  const [cls, setCls] = useState("");
+  // The last choices are remembered on this phone, so a refresh puts the teacher back where they were.
+  const [mockId, setMockId] = useState(() => remembered("mockId"));
+  const [subjectId, setSubjectId] = useState(() => remembered("subjectId"));
+  const [cls, setCls] = useState(() => remembered("cls"));
+  const [loaded, setLoaded] = useState(false);
 
   const reload = useCallback(async () => {
     setMocks(await MockCaptureService.listCached());
     setPending(await MockCaptureService.pendingAll());
     setLastDownload(await MockCaptureService.lastDownloadAt());
+    setLoaded(true);
   }, []);
 
   useEffect(() => {
     void reload();
     return onMockChange(() => void reload());
   }, [reload]);
+
+  // Remember the choices; forget them if that mock is no longer on the phone.
+  useEffect(() => {
+    if (!loaded) return;
+    const stillThere = mocks.some((m) => m.id === mockId);
+    if (mockId && !stillThere) {
+      setMockId("");
+      setSubjectId("");
+      setCls("");
+      return;
+    }
+    try {
+      window.localStorage.setItem(MEMORY, JSON.stringify({ mockId, subjectId, cls }));
+    } catch {
+      /* private mode: nothing to remember */
+    }
+  }, [loaded, mocks, mockId, subjectId, cls]);
 
   const mock = mocks.find((m) => m.id === mockId) ?? null;
   const pendingMap = useMemo(() => new Map(pending.map((p) => [p.key, p])), [pending]);
@@ -52,7 +82,7 @@ export function CaptureMock() {
       const n = await MockCaptureService.download();
       setMsg(n === 0 ? "No mocks are open for entry right now." : `${n} mock${n === 1 ? "" : "s"} saved on this phone.`);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not download the mocks.");
+      setErr(friendlyError(e, "Could not download the mocks."));
     } finally {
       setBusy("");
     }
