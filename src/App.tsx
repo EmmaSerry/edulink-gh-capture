@@ -9,6 +9,7 @@ import { CaptureHome } from "@pages/CaptureHome";
 import { CaptureRegister } from "@pages/CaptureRegister";
 import { CaptureAssessment } from "@pages/CaptureAssessment";
 import { CaptureRemarksAttendance } from "@pages/CaptureRemarksAttendance";
+import { CaptureAttendance } from "@pages/CaptureAttendance";
 import { CaptureFees } from "@pages/CaptureFees";
 import { CaptureProgress } from "@pages/CaptureProgress";
 import { CaptureDashboard } from "@pages/CaptureDashboard";
@@ -17,6 +18,7 @@ import { CaptureLearnerEdit } from "@pages/CaptureLearnerEdit";
 import { CaptureMock } from "@pages/CaptureMock";
 import { startLearnerEditSync } from "@/services/LearnerEditService";
 import { startMockSync } from "@/services/MockCaptureService";
+import { startAttendanceSync } from "@/services/AttendanceCaptureService";
 import { CaptureSyncStatus } from "@pages/CaptureSyncStatus";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { runOutboxMaintenance } from "@/services/OutboxMaintenance";
@@ -28,6 +30,7 @@ export default function App() {
     void runOutboxMaintenance();
     startLearnerEditSync();
     startMockSync();
+    startAttendanceSync();
   }, []);
 
   return (
@@ -46,6 +49,7 @@ export default function App() {
             <Route path="/register" element={<CaptureRegister />} />
             <Route path="/assessment" element={<CaptureAssessment />} />
             <Route path="/remarks" element={<CaptureRemarksAttendance />} />
+            <Route path="/attendance" element={<CaptureAttendance />} />
             <Route path="/mock" element={<CaptureMock />} />
             <Route path="/fees" element={<CaptureFees />} />
             <Route path="/progress" element={<CaptureProgress />} />

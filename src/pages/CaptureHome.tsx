@@ -6,6 +6,7 @@ import { useOutboxStatus } from "@/hooks/useOutboxStatus";
 import { LookupSyncService } from "@/services/LookupSyncService";
 import { SyncEngine } from "@/services/SyncEngine";
 import { MockCaptureService, onMockChange } from "@/services/MockCaptureService";
+import { AttendanceCaptureService, onAttendanceChange } from "@/services/AttendanceCaptureService";
 import { getLastLookupSyncAt, captureDb } from "@/lib/offlineDb";
 import { CaptureCountUp } from "@/components/CaptureCountUp";
 import { IconPersonPlus, IconClipboardCheck, IconNotebook, IconCash, IconChart, IconSync } from "@/components/CaptureIcons";
@@ -15,6 +16,8 @@ import { IconPersonPlus, IconClipboardCheck, IconNotebook, IconCash, IconChart, 
 const FEE_MANAGER_ROLES = new Set(["bursar", "school_admin", "platform_admin"]);
 // Mock exam marks entry: same people who can enter marks in the web app.
 const MOCK_ROLES = new Set(["school_admin", "teacher", "platform_admin"]);
+// Daily attendance register: class teachers and school administrators.
+const ATTENDANCE_ROLES = new Set(["school_admin", "teacher", "platform_admin"]);
 import type { TermRow } from "@/types/database";
 
 function formatWhen(iso: string | null): string {
@@ -38,6 +41,7 @@ export function CaptureHome() {
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [studentCount, setStudentCount] = useState<number | null>(null);
   const [mockPending, setMockPending] = useState(0);
+  const [attPending, setAttPending] = useState(0);
 
   useEffect(() => {
     void getLastLookupSyncAt().then(setLastSync);
@@ -45,7 +49,14 @@ export function CaptureHome() {
     void captureDb.students.count().then(setStudentCount);
     const loadMock = () => void MockCaptureService.pendingCount().then(setMockPending);
     loadMock();
-    return onMockChange(loadMock);
+    const loadAtt = () => void AttendanceCaptureService.pendingCount().then(setAttPending);
+    loadAtt();
+    const offMock = onMockChange(loadMock);
+    const offAtt = onAttendanceChange(loadAtt);
+    return () => {
+      offMock();
+      offAtt();
+    };
   }, []);
 
   async function handleRefresh() {
@@ -109,7 +120,14 @@ export function CaptureHome() {
             <span className="fw-semibold">{failed}</span>
           </div>
         )}
-        <button className="btn btn-primary btn-sm w-100" onClick={() => void SyncEngine.run()} disabled={!online || syncing}>
+        <button
+          className="btn btn-primary btn-sm w-100"
+          onClick={() => {
+            void SyncEngine.run();
+            void AttendanceCaptureService.send();
+          }}
+          disabled={!online || syncing}
+        >
           {syncing ? "Syncing…" : "Sync now"}
         </button>
         <Link to="/sync" className="d-block text-center small mt-2 text-decoration-none">
@@ -124,6 +142,16 @@ export function CaptureHome() {
       </Link>
 
       <div className="row g-2">
+        {profile && ATTENDANCE_ROLES.has(profile.role) && (
+          <div className="col-12">
+            <Link to="/attendance" className="capture-tile text-decoration-none d-block">
+              <IconNotebook size={26} className="mb-2" />
+              <span className="fw-semibold">Daily attendance</span>
+              <span className="d-block small text-muted">Take today's class register, even offline</span>
+              {attPending > 0 && <span className="d-block small text-warning">{attPending} register(s) unsent</span>}
+            </Link>
+          </div>
+        )}
         <div className="col-6">
           <Link to="/register" className="capture-tile text-decoration-none d-block">
             <IconPersonPlus size={26} className="mb-2" />
