@@ -1,18 +1,15 @@
 /**
- * Light/dark mode - the same "per-device UI preference, not application
- * data" pattern the original offline ACTRS app used (see its
- * src/hooks/useTheme.ts): read once from localStorage, applied via
- * Bootstrap 5.3's native `data-bs-theme` attribute on <html>, which both
- * Bootstrap's own precompiled CSS and this app's theme.css already have
- * matching dark rules for (see the `[data-bs-theme="dark"]` block in
- * theme.css) - so flipping the attribute is the entire mechanism, no
- * per-component dark-mode branching anywhere else in the app.
+ * Light/dark mode - a per-device UI preference stored in localStorage and
+ * applied with Bootstrap 5.3's `data-bs-theme` attribute on <html>.
  *
- * A Context (rather than every consumer calling its own useState) so
- * there is exactly one source of truth: the topbar's toggle button and
- * the attribute-setting effect always agree, even across remounts.
+ * A floating toggle is rendered here so it is available on EVERY screen,
+ * including the welcome intro and sign-in. Inside the signed-in app shell the
+ * toggle already lives in the footer bar, so the floating one hides itself
+ * there (see capture-contrast.css).
  */
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { IconMoon, IconSun } from "@/components/CaptureIcons";
+import "@/styles/capture-contrast.css";
 
 export type ThemeMode = "light" | "dark";
 const STORAGE_KEY = "edulink-gh.theme";
@@ -32,9 +29,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, mode);
   }, [mode]);
 
+  const toggle = () => setMode((m) => (m === "light" ? "dark" : "light"));
+
   return (
-    <ThemeContext.Provider value={{ mode, toggle: () => setMode((m) => (m === "light" ? "dark" : "light")) }}>
+    <ThemeContext.Provider value={{ mode, toggle }}>
       {children}
+      <button
+        type="button"
+        className="theme-fab"
+        onClick={toggle}
+        aria-label={mode === "light" ? "Switch to dark mode" : "Switch to light mode"}
+        title={mode === "light" ? "Switch to dark mode" : "Switch to light mode"}
+      >
+        {mode === "light" ? <IconMoon size={22} /> : <IconSun size={22} />}
+      </button>
     </ThemeContext.Provider>
   );
 }

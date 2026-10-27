@@ -1,0 +1,100 @@
+/**
+ * Capture app: light mode made readable in daylight / on a projector.
+ * Scoped to html[data-bs-theme="light"]; dark mode is untouched.
+ * Also holds the always-visible theme toggle button.
+ */
+html[data-bs-theme="light"] {
+  --actrs-text: #0a1220;
+  --bs-body-color: #0a1220;
+  --bs-emphasis-color: #000000;
+  --bs-secondary-color: #334155;
+  --bs-secondary-color-rgb: 51, 65, 85;
+  --bs-heading-color: #050b16;
+  --bs-border-color: #b3bfcd;
+  --bs-link-color: #0b4aa8;
+  --actrs-grey-border: #b3bfcd;
+  --actrs-glass: rgba(255, 255, 255, 0.97);
+  --actrs-glass-border: rgba(15, 30, 60, 0.2);
+  font-size: 106.25%;
+}
+
+html[data-bs-theme="light"] body { color: #0a1220; font-weight: 500; }
+
+html[data-bs-theme="light"] h1, html[data-bs-theme="light"] h2, html[data-bs-theme="light"] h3,
+html[data-bs-theme="light"] h4, html[data-bs-theme="light"] h5, html[data-bs-theme="light"] h6,
+html[data-bs-theme="light"] .h1, html[data-bs-theme="light"] .h2, html[data-bs-theme="light"] .h3,
+html[data-bs-theme="light"] .h4, html[data-bs-theme="light"] .h5, html[data-bs-theme="light"] .h6 {
+  color: #050b16;
+  font-weight: 700;
+}
+
+html[data-bs-theme="light"] .text-muted,
+html[data-bs-theme="light"] .text-body-secondary { color: #334155 !important; }
+
+html[data-bs-theme="light"] body::before {
+  background:
+    radial-gradient(circle at 15% 15%, rgba(18, 51, 99, 0.08), transparent 42%),
+    radial-gradient(circle at 88% 20%, rgba(14, 165, 196, 0.08), transparent 46%),
+    #f3f6fa !important;
+}
+html[data-bs-theme="light"] .capture-orbs { opacity: 0.25; }
+
+html[data-bs-theme="light"] .actrs-card,
+html[data-bs-theme="light"] .capture-tile,
+html[data-bs-theme="light"] .capture-surface {
+  background: #ffffff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid rgba(15, 30, 60, 0.2);
+}
+
+html[data-bs-theme="light"] .capture-tile { color: #0b2347; font-weight: 600; }
+html[data-bs-theme="light"] .capture-tab { color: #3b4859; font-weight: 600; }
+html[data-bs-theme="light"] .capture-tab-active { color: #0b2347; }
+
+html[data-bs-theme="light"] .form-label { color: #0a1220; font-weight: 600; }
+html[data-bs-theme="light"] .form-control,
+html[data-bs-theme="light"] .form-select {
+  background-color: #ffffff;
+  color: #0a1220;
+  border: 1.5px solid #5b6b80;
+}
+html[data-bs-theme="light"] .form-control::placeholder { color: #475569; opacity: 1; }
+
+html[data-bs-theme="light"] .table {
+  --bs-table-color: #0a1220;
+  --bs-table-border-color: #c3ccd8;
+  color: #0a1220;
+}
+html[data-bs-theme="light"] .table th { color: #050b16; font-weight: 700; }
+
+html[data-bs-theme="light"] .btn-outline-secondary {
+  --bs-btn-color: #1f2937;
+  --bs-btn-border-color: #475569;
+  --bs-btn-hover-bg: #334155;
+  --bs-btn-hover-color: #ffffff;
+}
+html[data-bs-theme="light"] .btn-outline-primary { --bs-btn-color: #123363; --bs-btn-hover-color: #ffffff; }
+
+/* ---- Always-visible theme toggle ---- */
+.theme-fab {
+  position: fixed;
+  right: 14px;
+  top: 14px;
+  z-index: 3000;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  background: #123363;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+html[data-bs-theme="dark"] .theme-fab { background: #f2b705; color: #0b1a30; border-color: #0b1a30; }
+
+/* once signed in, the toggle is in the footer bar of the app shell */
+body:has(.capture-shell) .theme-fab { display: none; }

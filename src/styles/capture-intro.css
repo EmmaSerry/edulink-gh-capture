@@ -1,0 +1,45 @@
+/* Welcome intro: a short story about the system. Shown over everything on app open. */
+.cap-intro {
+  position: fixed; inset: 0; z-index: 2900;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 1.2rem 1.2rem 1.6rem; gap: 0.9rem; text-align: center; color: #fff;
+  background: linear-gradient(160deg, #0b1a30 0%, #123363 55%, #0b7fa8 100%);
+  overflow: hidden;
+}
+.cap-intro::before, .cap-intro::after {
+  content: ""; position: absolute; border-radius: 50%; pointer-events: none; opacity: 0.35;
+  animation: capIntroFloat 14s ease-in-out infinite alternate;
+}
+.cap-intro::before { width: 340px; height: 340px; left: -120px; top: -80px; background: radial-gradient(circle, rgba(124, 92, 255, 0.7), transparent 70%); }
+.cap-intro::after { width: 380px; height: 380px; right: -140px; bottom: -100px; background: radial-gradient(circle, rgba(255, 182, 39, 0.55), transparent 70%); animation-delay: -6s; }
+@keyframes capIntroFloat { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(24px, 30px, 0); } }
+
+.cap-intro > * { position: relative; z-index: 1; }
+.cap-intro-skip {
+  position: absolute !important; top: 14px; left: 14px; z-index: 3;
+  border: 1.5px solid rgba(255, 255, 255, 0.7); background: rgba(255, 255, 255, 0.12); color: #fff;
+  border-radius: 999px; padding: 6px 16px; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+}
+.cap-intro-logo { width: min(260px, 62vw); background: #fff; border-radius: 18px; padding: 10px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
+.cap-intro-title { font-size: 1.55rem; font-weight: 800; line-height: 1.2; text-shadow: 0 0 18px rgba(14, 165, 196, 0.8); }
+.cap-intro-text { font-size: 1.02rem; max-width: 420px; opacity: 0.95; line-height: 1.4; }
+.cap-intro-shot {
+  width: min(92vw, 520px); max-height: 46vh; border-radius: 14px; overflow: hidden; background: #fff;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45); border: 2px solid rgba(255, 255, 255, 0.75);
+}
+.cap-intro-shot img { display: block; width: 100%; height: 100%; max-height: 46vh; object-fit: contain; background: #fff; }
+.cap-intro-shot.portrait { width: auto; }
+.cap-intro-shot.portrait img { width: auto; max-width: 70vw; }
+.cap-intro-slide { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; animation: capIntroIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes capIntroIn { from { opacity: 0; transform: translateY(18px) scale(0.97); } to { opacity: 1; transform: none; } }
+.cap-intro-note { font-size: 0.72rem; opacity: 0.7; }
+.cap-intro-dots { display: flex; gap: 8px; }
+.cap-intro-dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); transition: all 0.25s ease; }
+.cap-intro-dots i.on { width: 26px; border-radius: 6px; background: #fff; }
+.cap-intro-next {
+  border: 0; border-radius: 999px; padding: 10px 28px; font-weight: 800; font-size: 1rem;
+  background: #ffb627; color: #0b1a30; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cap-intro::before, .cap-intro::after, .cap-intro-slide { animation: none; }
+}
