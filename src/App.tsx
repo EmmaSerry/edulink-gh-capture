@@ -17,10 +17,12 @@ import { CaptureLearners } from "@pages/CaptureLearners";
 import { CaptureLearnerEdit } from "@pages/CaptureLearnerEdit";
 import { CaptureMock } from "@pages/CaptureMock";
 import { startLearnerEditSync } from "@/services/LearnerEditService";
+import { startLearnerRemoveSync } from "@/services/LearnerRemoveService";
 import { startMockSync } from "@/services/MockCaptureService";
 import { startAttendanceSync } from "@/services/AttendanceCaptureService";
 import { CaptureSyncStatus } from "@pages/CaptureSyncStatus";
 import { InstallAppButton } from "@/components/InstallAppButton";
+import { RemovalNotice } from "@/components/RemovalNotice";
 import { runOutboxMaintenance } from "@/services/OutboxMaintenance";
 
 export default function App() {
@@ -29,6 +31,7 @@ export default function App() {
   useEffect(() => {
     void runOutboxMaintenance();
     startLearnerEditSync();
+    startLearnerRemoveSync();
     startMockSync();
     startAttendanceSync();
   }, []);
@@ -36,6 +39,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <CaptureAuthProvider>
+        <RemovalNotice />
         <Routes>
           <Route path="/login" element={<CaptureLogin />} />
           <Route

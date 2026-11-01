@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useCaptureAuth } from "@contexts/CaptureAuthContext";
 import { captureDb } from "@/lib/offlineDb";
 import { PhotoPickerField } from "@/components/PhotoPickerField";
@@ -9,6 +9,7 @@ import {
   saveLearnerEdit,
   type GuardianEdit,
 } from "@/services/LearnerEditService";
+import { queueRemoval } from "@/services/LearnerRemoveService";
 import type { StudentRow, StudentStatus } from "@/types/database";
 
 const RELATIONSHIPS = ["Mother", "Father", "Guardian", "Grandparent", "Sibling", "Other"];
@@ -19,6 +20,7 @@ const STATUS_LABEL: Record<string, string> = {
   WITHDRAWN: "Withdrawn",
   DECEASED: "Deceased",
 };
+const REMOVE_ROLES = new Set(["teacher", "school_admin", "district_admin", "platform_admin"]);
 const STATUS_ROLES = new Set(["school_admin", "district_admin", "platform_admin"]);
 
 interface Bio {
@@ -68,6 +70,8 @@ export function CaptureLearnerEdit() {
   const { id } = useParams<{ id: string }>();
   const { profile } = useCaptureAuth();
   const canChangeStatus = !!profile && STATUS_ROLES.has(profile.role);
+  const canRemove = !!profile && REMOVE_ROLES.has(profile.role);
+  const navigate = useNavigate();
 
   const [student, setStudent] = useState<StudentRow | null>(null);
   const [bio, setBio] = useState<Bio | null>(null);
@@ -202,6 +206,22 @@ export function CaptureLearnerEdit() {
     }
   }
 
+  async function handleRemove(mode: "archive" | "delete") {
+    if (!student) return;
+    const name = `${student.first_name} ${student.last_name}`.trim();
+    if (mode === "archive") {
+      if (!window.confirm(`Archive ${name}?\n\nThe learner will be hidden from your class lists. Their records are kept, and the school admin can bring them back.`)) return;
+      const reason = window.prompt("Reason (for example: moved to another school, stopped attending):", "") ?? null;
+      await queueRemoval(student, "archive", reason);
+    } else {
+      if (!window.confirm(`PERMANENTLY DELETE ${name}?\n\nAll their marks, attendance, fees and reports will be erased. This cannot be undone.`)) return;
+      const typed = window.prompt('To confirm, type DELETE in capital letters:', "");
+      if (typed?.trim() !== "DELETE") return;
+      await queueRemoval(student, "delete", null);
+    }
+    navigate("/learners", { replace: true });
+  }
+
   if (loading) return <p className="text-muted">Loading...</p>;
   if (notFound || !student || !bio)
     return (
@@ -326,6 +346,24 @@ export function CaptureLearnerEdit() {
       <button className="btn btn-primary w-100 mb-4" type="submit" disabled={saving}>
         {saving ? "Saving..." : "Save changes"}
       </button>
+
+      {canRemove && (
+        <div className="actrs-card p-3 mb-4 border border-danger-subtle">
+          <h2 className="h6 fw-bold mb-1">Remove learner</h2>
+          <p className="text-muted small">
+            Archive keeps all records and hides the learner. Delete erases the learner and everything recorded for them for good.
+            Works offline; sent when you are online.
+          </p>
+          <div className="d-flex gap-2">
+            <button type="button" className="btn btn-outline-warning flex-fill" onClick={() => void handleRemove("archive")}>
+              Archive
+            </button>
+            <button type="button" className="btn btn-outline-danger flex-fill" onClick={() => void handleRemove("delete")}>
+              Delete permanently
+            </button>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
